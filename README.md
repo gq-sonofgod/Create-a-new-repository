@@ -1,5 +1,5 @@
-ï»¿V1.3å‡ºå‚ç¨‹åº
-è‡ªå¹³è¡¡
+V1.3³ö³§³ÌĞò
+×ÔÆ½ºâ
 test push without password
 test ssh
 test diorder
