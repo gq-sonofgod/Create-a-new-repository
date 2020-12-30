@@ -86,8 +86,7 @@ u16 FallDetectBase1 =0;
 u16 FallDetectBase2 =0;
 u16 T2sCnt1 = 0;
 u16 RunCnt = 0;
-u16 Adc_Time=0;
-u8 ADC_Scan_Flag=0;
+
 extern u16 Com1LongCnt;
 extern u16 Com3LongCnt;
 extern u16 KeyPressDownCnt;
@@ -105,15 +104,9 @@ extern u16 sensTimer;
 //TIM2中断 1MS中断周期
 INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
 {
-  TIM2_ClearFlag(TIM2_FLAG_UPDATE);//对各个ADC通道轮流采样
-        
-  //Adc_Time++;
-  if(Adc_Time == 0)
-  {
-   Adc_Time=1;
-   ADC_Scan_Flag=1;           
+  TIM2_ClearFlag(TIM2_FLAG_UPDATE);
+  ADCSample(&ADCValue);         //对各个ADC通道轮流采样
   
-  }
   
   if(Key==KEY_VER)
   {
@@ -121,7 +114,6 @@ INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
   
   }
   else VER_Cnt=0;
-  
   if(DisplayMode==FLash_HeightMode)
   {
       Flash_Cnt++;
@@ -189,7 +181,6 @@ INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
   if(++T10msCnt >= 10)
   {
     T10msCnt = 0;
-    
     T10msFlag = 1;
   }
   if(++T100msCnt >= 30)
@@ -208,15 +199,9 @@ INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
       Menu2Num = 0;
       Menu3Num = 0;
       Rst_EN=0;
-      //Check_EN=0;
+      Check_EN=0;
       Balance_EN=0;
       DisplayMode = HeightMode;
-      if((Check_EN==1)||(Check_EN==2))
-      {
-      DisplayRemind=ON; 
-      HealthModeReset() ; 
-      Check_EN=0;
-      }
     }
   }
   
@@ -431,15 +416,44 @@ INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
       BuzzerState = OFF;
      }
   }
-else if(InitFlag == 5)
+  else if(InitFlag == 5)
   {
-    if(++InitCnt>=50)
-    {
+    if(++InitCnt >= 50)
+    {  //进入复位操作（RST）
       InitCnt = 0;
       InitFlag = 0;
-      ((void (*)(void))0x8000)();
+      
+      memset(&Buffer[0], 0, sizeof(Buffer));
+      //复位之前有用数据保存操作
+      Buffer[33] = INITIALIZED;
+      Buffer[35] = RELEASE;
+      Buffer[36] = Unit;
+      Buffer[34] = TIMEVAL;
+      memcpy(&Buffer[37], &BaseHeight, sizeof(BaseHeight));
+      memcpy(&Buffer[41],&DiffHall, 2);
+      memcpy(&Buffer[43], &MaxHeight, sizeof(MaxHeight));
+      Buffer[47] = Speed;
+      Buffer[48] = Sensitivity;
+      memcpy(&Buffer[49], &MinColumnHeight, sizeof(MinColumnHeight));
+      memcpy(&Buffer[53], &MaxColumnHeight, sizeof(MaxColumnHeight));
+      
+      Buffer[61] = Balance_Data.TwoMotorRunFlag;
+      
+      memcpy(&Buffer[64],&AccDataBag.Y_Offset,sizeof(AccDataBag.Y_Offset));
+      memcpy(&Buffer[66],&AccDataBag.Y_OffsetFlag,sizeof(AccDataBag.Y_OffsetFlag));
+      memcpy(&Buffer[73],&AccDataBag.Y_Offset_Spec,sizeof(AccDataBag.Y_Offset_Spec));
+                     
+       
+      memcpy(&Buffer[75],&AccDataBag.Y_OffsetFlag_Spec,sizeof(AccDataBag.Y_OffsetFlag_Spec)); 
+      EnableHPSlopeFilter();
+     //Y_Off_EN_Fleg=0;  
+     // DisableHPSlopeFilter(); 
+     // Clear_AccDateBuffer();
+      EEPROM_Write();
+
+      ((void (*)(void))0x8000)();       //进行软件复位，实现RST功能
+      }
     }
-  }
   /*
   else if(InitFlag == 3)
   {
@@ -523,6 +537,29 @@ else if(InitFlag == 5)
   }
   HealthModeTimeProc();     //每1ms执行一次
   
+  //if (SysCmd == CmdSetBalance)
+  /*
+  if (Balance_Data.BalanceAdjuseState != 0)
+  {
+    if (M2Cmd == CmdDownRetard)
+    {
+      if (++Balance_Data.RetardM2StopCnt > 800)
+      {
+        Balance_Data.RetardM2StopCnt = 0;
+        Balance_Data.RetardM2Stop = 1;
+      }
+    }
+    if (M1Cmd == CmdDownRetard)
+    {
+      if (++Balance_Data.RetardM1StopCnt > 800)
+      {
+        Balance_Data.RetardM1StopCnt = 0;
+        Balance_Data.RetardM1Stop = 1;
+      }
+    }
+  }
+  */
+  
   if((SysCmd == CmdDownRetard)||(SysCmd == CmdUpRetard))
   {
     if(++RetardStopCnt>800)
@@ -553,7 +590,7 @@ else if(InitFlag == 5)
 
   if (Balance_Data.BalanceAdjuseState == 2)
   {
-    if((M1Cmd != CmdNull) && (M1Cmd != CmdStop))//电机1处于运行状态则进行PID调节
+    if((M1Cmd != CmdNull)&&(M1Cmd != CmdStop))//电机1处于运行状态则进行PID调节
     { 
         if(++T100msCnt1 >= 100)
         { 
@@ -609,7 +646,8 @@ else if(InitFlag == 5)
       {
         if ((AccDataBag.Acc_y <=AnglePID.Ref_Para)&&(Ref_Para_MiniSpeed==0))
         {
-            //AnglePID.OutPut =  30;//BALANCE_MAXSPD;         
+            //AnglePID.OutPut =  30;//BALANCE_MAXSPD;
+            
             AnglePID.OutPut = 6;// BALANCE_MAXSPD;
         }
         else 
@@ -619,10 +657,31 @@ else if(InitFlag == 5)
       }
       
     }
+    
+    
     //if (++Balance_Data.AnglePidTimerCnt >= 100)//;
     //if (++Balance_Data.AnglePidTimerCnt >= 50)//;
     if (++Balance_Data.AnglePidTimerCnt >= 20)
     {
+      /*     
+      AnglePID.Fact_Para = AccDataBag.Acc_y;
+      Balance_Data.AnglePidTimerCnt = 0;
+      AnglePIDCal(&AnglePID);
+
+      //SetTIM1_PWMDuty(1,1350-M1PID.PWMDuty);
+      //SetTIM1_PWMDuty(2,1350-M2PID.PWMDuty);
+      
+      if ((M2Cmd == CmdUp) || (M2Cmd == CmdDown))
+      {
+        SetTIM1_PWMDuty(2,1350 - AnglePID.PWMDuty);
+      }
+      if ((M1Cmd == CmdUp) || (M1Cmd == CmdDown))
+      {
+        SetTIM1_PWMDuty(1,1350 - AnglePID.PWMDuty);
+      }
+      //SetTIM1_PWMDuty(1,1350 - AnglePID.PWMDuty);
+      //SetTIM1_PWMDuty(2,1350 - AnglePID.PWMDuty); 
+      */
       Balance_Data.AnglePidTimerCnt = 0;
       
       M1PID.SetSpeed = AnglePID.OutPut;
@@ -952,8 +1011,8 @@ else if(InitFlag == 5)
       BuzzerWorkMode = 0;
     }
   }
-
   
+  //IWDG_ReloadCounter();
 }
 
 INTERRUPT_HANDLER(UART3_RX_IRQHandler, 21)

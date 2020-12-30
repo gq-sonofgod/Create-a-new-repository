@@ -2,8 +2,8 @@
 #define STM8S_IT_H
 #include "stm8s.h"
 
-extern u8 ADC_Scan_Flag;
-extern u16 Adc_Time;
+
+
 extern u16 DelayCntForTap;
 extern u16 ResetCnt;
 

@@ -2,7 +2,7 @@
 #define ERRDETECTION
 #include "stm8s.h"
 
-#define  MAXCURRENT   380// 285//380 //最大电流，此处为ADC值
+#define  MAXCURRENT    750 //最大电流，此处为ADC值
 
 
 
@@ -23,7 +23,6 @@
 #define  Err_M2TwoHall         0x0015   //电机2两个HALL全故障
 
 #define  Err_M1AllWire         0x0016   //电机1HALL线和电源线全部故障
-
 #define  Err_M2AllWire         0x0017   //电机2HALL线和电源线全部故障
   
 #define  Err_LSM6DSL           0x001E   //三轴传感器故障

@@ -83,13 +83,13 @@
 #if defined (ET223_CM_ANTI)|| defined(ET223H_CM_ANTI)
 
 
-  #define MINHEIGHT 60.5f  //60.5
-  #define MAXHEIGHT 126.0f//126.0f
+  #define MINHEIGHT 60.5 //60.5       //要改
+  #define MAXHEIGHT 126.0f//126.0f    //要改
 
   //#define MAXHEIGHT 100.0f
 
 
-  #define BASEHEIGHT 60.5f
+  #define BASEHEIGHT 60.5f            //要改
   #define UNIT 0
   #define SENS 3
   #define SPEED 60                      //定义  100ms产生60个HALL脉冲，其中电机转一圈产生8个HALL脉冲
@@ -98,7 +98,7 @@
   #define MAXHEIGHT1  49.4
   #define BOTTOM  18114                 //复位完成后的HALL值
   #define BASEHALL 18000                // 机械最底端底端HALL值 
-  #define DIF_HALL 10220
+  #define DIF_HALL 10210                //要改
 
     
   /*
@@ -142,9 +142,9 @@
   #define  MainBoardSoftNumChar3  (Char_F)
 
 #elif defined (ET223_INCH_ANTI)|| defined(ET223H_INCH_ANTI)
-  #define MINHEIGHT 39.8f
-  #define MAXHEIGHT 76.2f
-  #define BASEHEIGHT 39.8f
+  #define MINHEIGHT  57.9f
+  #define MAXHEIGHT  123.0f
+  #define BASEHEIGHT 57.9f
   #define UNIT 1
   #define SENS 3
   #define SPEED 60
@@ -153,7 +153,7 @@
   #define MAXHEIGHT1  48.4
   #define BOTTOM  18114 //复位完成后的HALL值
   #define BASEHALL 18000  // 机械最底端底端HALL值 
-  #define DIF_HALL 5674
+  #define DIF_HALL 10135
 
   #define HD_ANTI_UP_1  16
   #define HD_ANTI_DOWN_1 18
@@ -325,94 +325,6 @@
   #define  MainBoardSoftNumChar1  (Data_Char[0])
   #define  MainBoardSoftNumChar2  (Data_Char[4])
   #define  MainBoardSoftNumChar3  (Data_Char[2])
-
-#elif defined (E2AL_CM)
-
-
-  #define MINHEIGHT 73.5f  //60.5
-  #define MAXHEIGHT 123.0f//126.0f
-
-  //#define MAXHEIGHT 100.0f
-
-  #define MAX_HALL_DIFF           8915//(MAX_HEIGHT_DIFF * 155.8742) 
-
-  #define BASEHEIGHT 73.5f
-  #define UNIT 0
-  #define SENS 1//3
-  #define SPEED 71      //71--32MM/S                  //定义  100ms产生60个HALL脉冲，其中电机转一圈产生8个HALL脉冲
-  #define RATE 222.8687f
-  #define MINHEIGHT1  23.8
-  #define MAXHEIGHT1  49.4
-  #define BOTTOM  18114                 //复位完成后的HALL值
-  #define BASEHALL 18000                // 机械最底端底端HALL值 
-  #define DIF_HALL 11032
-
-  #define HD_ANTI_UP_1  16
-  #define HD_ANTI_DOWN_1 18
-  #define ST_ANTI_UP_1  36
-  #define ST_ANTI_DOWN1_1 28
-  #define ST_ANTI_DOWN2_1 18
-
-  #define HD_ANTI_UP_2  14
-  #define HD_ANTI_DOWN_2 16
-  #define ST_ANTI_UP_2  32
-  #define ST_ANTI_DOWN1_2 26
-  #define ST_ANTI_DOWN2_2 16
-
-  #define HD_ANTI_UP_3  12
-  #define HD_ANTI_DOWN_3 14
-  #define ST_ANTI_UP_3  30
-  #define ST_ANTI_DOWN1_3 24
-  #define ST_ANTI_DOWN2_3 14
-
-  #define  MainBoardSoftVerChar1  (Char_C)
-  #define  MainBoardSoftNumChar1  (Data_Char[1])
-  #define  MainBoardSoftNumChar2  (Data_Char[2])
-  #define  MainBoardSoftNumChar3  (Char_F)
-
-#elif defined (E2AL_INCH)
-
-
-  #define MINHEIGHT 73.5f  //60.5
-  #define MAXHEIGHT 123.0f//126.0f
-
-  //#define MAXHEIGHT 100.0f
-
-  #define MAX_HALL_DIFF  8915//(MAX_HEIGHT_DIFF * 155.8742) 
-
-  #define BASEHEIGHT 73.5f
-  #define UNIT 1
-  #define SENS 1//3
-  #define SPEED 71      //71--32MM/S                  //定义  100ms产生60个HALL脉冲，其中电机转一圈产生8个HALL脉冲
-  #define RATE 222.8687f
-  #define MINHEIGHT1  28.9
-  #define MAXHEIGHT1  49.4
-  #define BOTTOM  18114                 //复位完成后的HALL值
-  #define BASEHALL 18000                // 机械最底端底端HALL值 
-  #define DIF_HALL 11032
-
-  #define HD_ANTI_UP_1  16
-  #define HD_ANTI_DOWN_1 18
-  #define ST_ANTI_UP_1  36
-  #define ST_ANTI_DOWN1_1 28
-  #define ST_ANTI_DOWN2_1 18
-
-  #define HD_ANTI_UP_2  14
-  #define HD_ANTI_DOWN_2 16
-  #define ST_ANTI_UP_2  32
-  #define ST_ANTI_DOWN1_2 26
-  #define ST_ANTI_DOWN2_2 16
-
-  #define HD_ANTI_UP_3  12
-  #define HD_ANTI_DOWN_3 14
-  #define ST_ANTI_UP_3  30
-  #define ST_ANTI_DOWN1_3 24
-  #define ST_ANTI_DOWN2_3 14
-
-  #define  MainBoardSoftVerChar1  (Char_C)
-  #define  MainBoardSoftNumChar1  (Data_Char[1])
-  #define  MainBoardSoftNumChar2  (Data_Char[2])
-  #define  MainBoardSoftNumChar3  (Char_F)
 
 #endif
 

@@ -13,7 +13,7 @@
 #include "Tap.h"
 u8 Buffer[128];
 u8 SaveIndex = 0;
-u8 Balance_ON=0;
+
 /***********************************************************************************************************
 * 函数名称: EEPROM_Init()
 * 输入参数: 无
@@ -33,7 +33,6 @@ void EEPROM_Init(void)
 ************************************************************************************************************/
 void EEPROM_Write(void)
 {
-  Delay_ms(2);  
   FLASH_Unlock(FLASH_MEMTYPE_DATA); //解锁内部EEPROM
   while (FLASH_GetFlagStatus(FLASH_FLAG_DUL) == RESET)
   {}
@@ -41,7 +40,6 @@ void EEPROM_Write(void)
   while (FLASH_GetFlagStatus(FLASH_FLAG_HVOFF) == RESET)
   {}
   FLASH_Lock(FLASH_MEMTYPE_DATA);
-  Delay_ms(2);
 }
 
 /***********************************************************************************************************
@@ -134,7 +132,7 @@ void SysDataRead(void)
   else //已经初始化则读取存储的数据
   {
     //for(i = 0; i < 61; i++)
-    for(i = 0; i <= 76; i++)
+    for(i = 0; i <= 75; i++)
     {
       Buffer[i] = FLASH_ReadByte(ErrCodeAddr + i);
     }
@@ -146,7 +144,6 @@ void SysDataRead(void)
     Tap_Parameter.TapCtlThreshold= Buffer[71];
     Tap_Parameter.TapCtlThreshold=Tap_Parameter.TapCtlThreshold<<8;
     Tap_Parameter.TapCtlThreshold=Tap_Parameter.TapCtlThreshold+Buffer[72];
-    Balance_ON=Buffer[76];
     //BaseHeight = Buffer[37];
     memcpy(&BaseHeight, &Buffer[37], sizeof(BaseHeight));//运行到的最低高度 60.5cm
     memcpy(&MaxHeight, &Buffer[43], sizeof(MaxHeight)); //运行到的最高高度 126cm
@@ -218,25 +215,11 @@ void SysDataRead(void)
     {
        ErrCode = 0;
     }
-    
-    
-    if(Balance_ON == 1)
-    {
-      SysState =RESET;
-      ErrCode = 0xffff;
-      DisplayMode = ErrorMode;
-      Balance_ON=0; 
-      Buffer[76] = Balance_ON;
-      EEPROM_Write();
-    }
-                 
-    if((ErrCode == 0xffff))
+    if(ErrCode == 0xffff)
     { 
       
-      SysState =RESET;
-      //ErrCode = 0xffff;
+      ;
       DisplayMode = ErrorMode;
-      
     }
     else if(ErrCode != 0)
     {
@@ -246,7 +229,6 @@ void SysDataRead(void)
       M1State.HallLast = BASEHALL;
       M2State.HallNow  = BASEHALL;
       M2State.HallLast = BASEHALL;
-     
     }
     else
     {     
@@ -299,7 +281,6 @@ void SysDataRead(void)
       ErrCode=Err_LSM6DSL;
     }
   }
-  
 }
 
 
@@ -372,12 +353,6 @@ void LowPowerSave(void)
     SaveFlag = 2;
     memcpy(&Buffer[2],&M1State.HallNow,sizeof(M1State.HallNow));        //存储M1 HALL当前值
     memcpy(&Buffer[4],&M2State.HallNow,sizeof(M2State.HallNow));        //存储M2 HALL当前值
-    
-    //自平衡点动模式下，存储两腿间高度差值
-    Balance_Data.TwoMotorOffsetHall = M1State.HallNow - M2State.HallNow;            //得到两电机间的HALL偏差值    
-    memcpy(&Buffer[62],&Balance_Data.TwoMotorOffsetHall,sizeof(Balance_Data.TwoMotorOffsetHall));     //Buffer[62]，Buffer[63]存储因地形自适应而产生的两电机HALL差值
-        
-    
     EEPROM_Write();
     Delay_ms(10);
   }

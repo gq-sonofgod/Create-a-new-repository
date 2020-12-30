@@ -64,7 +64,7 @@ void FaultDetect(void)
     OverCurFlag = 0;
     
     if((SysState == RESET)&&(reach == 0)&&(ErrCode!=Err_Fall)&&(ErrCode!=Err_LSM6DSL))
-    KeyDisable = 1;
+      KeyDisable = 1;
     reach = 1;
     
     if(ErrCode != ErrCodeOld)
@@ -493,10 +493,10 @@ void HallDetect(void)
   
     
   
-  if(MotorRunTotal >= 120000) //连续运行时间达到2分钟
+  if(MotorRunTotal >= 240000) //连续运行时间达到4分钟
   {
     ErrCode = Err_TimeEnd;
-    MotorRunTotal = 120000;
+    MotorRunTotal = 240000;
   }
   
   if((MotorStopTime >= 780000)&&(ErrCode == Err_TimeEnd)) //停歇时间达到13分钟 
@@ -543,7 +543,7 @@ void HallDetect(void)
 void TemperatureDetect(void)
 {
   
-  if(ADCValue.Temperature > 780)//710
+  if(ADCValue.Temperature > 710)//710
   {
     if(ErrCode==0)
     {
@@ -551,7 +551,7 @@ void TemperatureDetect(void)
       T18minFlag = 1;
     }
   }
-  else if((ADCValue.Temperature < 709)&&(T18minFlag == 1)&&(T18minCnt>=1080000))//1080000
+  else if((ADCValue.Temperature < 688)&&(T18minFlag == 1)&&(T18minCnt>=1080000))//1080000
   {
     if(ErrCode == Err_Overheating)
     {

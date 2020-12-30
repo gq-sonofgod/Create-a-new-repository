@@ -58,7 +58,7 @@ u8 Speed = SPEED;
 u32 AgingAllTimeLast = 0;
 u8 Com1DeviceState = MASTER;
 u8 Com3DeviceState = MASTER;
-//s16 ddd=0;
+s16 ddd=0;
 
 
 lsm6dsl_ctx_t dev_ctx;
@@ -108,7 +108,7 @@ void IWDG_Config(void)
   IWDG_Enable();
   IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
   IWDG_SetPrescaler(IWDG_Prescaler_128);
-  IWDG_SetReload(0xFF);
+  IWDG_SetReload(0xff);
   IWDG_ReloadCounter();   
 }
 
@@ -125,7 +125,7 @@ void EnableHPSlopeFilter()
   
   HPSlopeFilterFlag = 1;
   
- // lsm6dsl_xl_data_rate_set(&dev_ctx, LSM6DSL_XL_ODR_416Hz);//没有敲击的情况下频率只有12.5HZ
+  lsm6dsl_xl_data_rate_set(&dev_ctx, LSM6DSL_XL_ODR_416Hz);
   
 }
 
@@ -143,7 +143,7 @@ void DisableHPSlopeFilter()
   
   HPSlopeFilterFlag = 0;
   
- // lsm6dsl_xl_data_rate_set(&dev_ctx, LSM6DSL_XL_ODR_12Hz5); //没有敲击的情况下频率只有12.5HZ
+  lsm6dsl_xl_data_rate_set(&dev_ctx, LSM6DSL_XL_ODR_12Hz5); 
   
 }
 
@@ -196,9 +196,9 @@ u8 LSM6DSL_Reset(void)
   
   
   
-  lsm6dsl_xl_data_rate_set(&dev_ctx, LSM6DSL_XL_ODR_12Hz5); 
+  lsm6dsl_xl_data_rate_set(&dev_ctx, LSM6DSL_XL_ODR_416Hz); 
   lsm6dsl_xl_data_rate_get(&dev_ctx, &xl_ord_val);  
-  if(xl_ord_val != LSM6DSL_XL_ODR_12Hz5) //滤波频率
+  if(xl_ord_val != LSM6DSL_XL_ODR_416Hz) //滤波频率
   {
      return 2;
   }
@@ -682,9 +682,7 @@ void G_Acc_Filter()
     acc_x = (SensorOut[1]<<8)|SensorOut[0];     //得到16位数据
     acc_y = (SensorOut[3]<<8)|SensorOut[2];
     acc_z = (SensorOut[5]<<8)|SensorOut[4];
-    
-     //ddd=acc_y;
-     
+     ddd=acc_y;
     if((AccDataBag.Y_OffsetFlag==1)&&(AccDataBag.Y_OffsetFlag_Spec==0)&&(Y_Off_EN_Fleg==0))
     {
     acc_y = acc_y -   AccDataBag.Y_Offset;        //得到Y轴值真实值
@@ -744,8 +742,8 @@ void G_Acc_Filter()
         AccDataBag.ALLAccXl_z += AccDataBag.AccXl_z[AccDataBag.Number_Cnt]; 
         if((Y_Off_EN_Fleg==1))
        {
-        static u8 Che_cnt=0;
-        Che_cnt++;
+       static u8 Che_cnt=0;
+       Che_cnt++;
         if(Che_cnt>10)  
         {
          Che_cnt=0;
@@ -759,8 +757,13 @@ void G_Acc_Filter()
          EnableHPSlopeFilter();              
          EEPROM_Write();
         }
-        }
+      
+      }
+      
+        
+        
       } 
+      
         
       AccDataBag.Number_Cnt++;
    
@@ -776,6 +779,8 @@ void G_Acc_Filter()
 
 void main(void)
 { 
+ 
+ 
   HSE_CLK_INIT();                       //24M外部晶振
   Delay_Init(24);
   EXTI_Init();
@@ -820,7 +825,7 @@ void main(void)
       if((Sensitivity != 0)&&(LSM6DSLFlag==1))
       {
         if(lsm6dsl_status_reg_get(&dev_ctx, &StatusReg) == 0)     //获得传感器3个模拟量更新状态值（3个模拟量分别是温度，陀螺仪和加速度器）
-        {                       
+        {                                                       
           if(StatusReg.xlda==1)                                 //加速度器的值有更新     
           {
             lsm6dslTimer = 0;
@@ -883,11 +888,8 @@ void main(void)
                         增加获取TAP状态寄存器操作
             ******************************************************/
 
-            if(Adjust_State== 0)
-            {
-                GetTapTriggerState();
-            }
-
+            if( Adjust_State== 0)GetTapTriggerState();
+            
           }
           else if(lsm6dslTimer>200)     //200ms加速度器的值没更新，说明传感器故障
           {
@@ -927,8 +929,25 @@ void main(void)
         { 
          LED_Display();          
         }
-         if(T10msFlag == 1)                //10ms进行一个采样
+         
+        if(T10msFlag == 1)                //10ms进行一个采样
         { 
+          /*
+          if ((Balance_Data.BalanceAdjuseState == 0) || (InitFlag != 0 ))
+          {
+            //KeyRespond(ADCValue.KeyADCValue);           //按键响应程序 ,其中参数ADCValue.KeyADCValue无意义
+            if(HealthMode != 5)   
+            {
+                KeyRespond(ADCValue.KeyADCValue);           //按键响应程序
+            }
+            else if(HealthMode == 5)
+            {
+                HealthModeTimerSet(ADCValue.KeyADCValue);   //健康模式时间设置
+            }
+          }
+          */
+          
+          
           if(HealthMode != 5)   
           {
             KeyRespond(ADCValue.KeyADCValue);           //按键响应程序
@@ -937,24 +956,15 @@ void main(void)
           {
             HealthModeTimerSet(ADCValue.KeyADCValue);   //健康模式时间设置
           }
-        } 
-       
-        if(ADC_Scan_Flag == 1)
-        {
-         ADCSample(&ADCValue);  
-         ADC_Scan_Flag=0;
-         Adc_Time=0;
+          
         }
         Adjust_Balance_StepByStepo();
-       //Save_Position_Tap();
+        Save_Position_Tap();
         SetBalance();
-       //Tap_Control();
+        Tap_Control();
         LimitPower();                       //限定系统最大功率
         MotorControl();                     //电机控制函数，封装三个电机控制函数
         PositionSave();                     //存储当前位置（用于M键+1/2/3记录当前位置）
-        
-        IWDG_ReloadCounter();
-        
         FaultDetect();                      //系统各种故障检测，主要包括电机过流故障，电机HALL开关故障，过温故障及各故障后的一些标志位的清零操作
         LowPowerSave();                     //低电压存储操作(不知道什么用)
         HealthModeProc();                   //健康模式处理函数  HealthMode=0(初始化)，所以刚上电此函数没进行操作
@@ -966,7 +976,6 @@ void main(void)
     {
       RespondCmdOfPC();         //接收处理来自上位机软件的命令
     }
-    
     IWDG_ReloadCounter();
   }
 }

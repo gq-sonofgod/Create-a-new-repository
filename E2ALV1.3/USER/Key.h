@@ -108,7 +108,7 @@ extern u8 Balance_EN;
 extern u16 KeyUpCnt;
 extern u16 KeyDownCnt;
 extern u16 VER_Cnt;
-extern u8 sensKeyFlag;
+
 
 u16 KeyScan(u16 value);
 void KeyRespond(u16 value);
@@ -119,8 +119,14 @@ void KeyRespondTest(u16 value);
 void KeyNullProcess();
 
 extern void Balance_Data_Refresh();
+extern u8 GetM1BeforeRunState();
+extern void SetM1BeforeRunState(u8 state);
+
+extern u8 GetM2BeforeRunState();
+extern void SetM2BeforeRunState(u8 state);
+
+extern void SetCmdToPresetState(u8 state);
+extern u8 GetCmdToPresetState();
 
 
-extern u8 DisplayRemind;
-extern  u8 RST_Sat;
 #endif

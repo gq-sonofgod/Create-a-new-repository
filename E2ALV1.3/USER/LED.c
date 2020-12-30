@@ -246,33 +246,35 @@ void LED_Display(void)
         Height = (top - bottom)/RATE + BaseHeight;  //RATE 为HALL脉冲数与实际设备高度之间的换算系数
 #ifdef INCH
         Height = Height/2.54;
-#endif  
-        if(Flash_Cnt < 500)
+#endif
+         
+        if(Flash_Cnt<500)
         {
-         Dis_Char[0] = Char_S;
-         Dis_Char[1] = Char_E;
-         Dis_Char[2] = Char_T;
+        
+              Dis_Char[0] = Char_S;
+              Dis_Char[1] = Char_E;
+              Dis_Char[2] = Char_T;
+     
         }
-        else if (Flash_Cnt < 1000)
+        else if (Flash_Cnt<1000)
         {
           Dis_Char[0] = 0;
           Dis_Char[1] = 0;
           Dis_Char[2] = 0;
-        }
-        break;
         
+        }
+        
+        
+        
+        
+        
+        break;
       case SaveMode: //存储显示模式
         break;
         
       case RemindMode: //提醒模式显示
         break;
-      
-      case Test_Sens: //提醒模式显示
-        Dis_Char[0]=Char_R;
-        Dis_Char[1]=Char_;
-        Dis_Char[2]=Data_Char[Sensitivity];
         
-        break; 
       case ErrorMode: //错误显示
         if(ErrCode == 0xffff)
         {
@@ -296,29 +298,27 @@ void LED_Display(void)
         break;
         
         case MenuMode://菜单选择模式
-        if(Menu1Flag == 1)//进入一级菜单      //程序中没有Menu1Flag = 1设置
+        if(Menu1Flag == 1)//进入一级菜单
         {
           switch(Menu2Num) 
           {
-            case 0:
-            Dis_Char[0]=Char_P;
-            Dis_Char[1]=Char_R;
-            Dis_Char[2]=Char_E;   
-            break;
+          case 0:
+           Dis_Char[0]=Char_P;
+           Dis_Char[1]=Char_R;
+           Dis_Char[2]=Char_E;   
+           break;
            
-            case 1:
-            Dis_Char[0]=Char_T;
-            Dis_Char[1]=Char_A;
-            Dis_Char[2]=Char_P;    
-            break;
+           case 1:
+           Dis_Char[0]=Char_T;
+           Dis_Char[1]=Char_A;
+           Dis_Char[2]=Char_P;    
+           break;
            
-            case 2:
-            Dis_Char[0]=Char_b;
-            Dis_Char[1]=Char_A;
-            Dis_Char[2]=Char_L;    
-            break;
-           
-            default:break;
+           case 2:
+           Dis_Char[0]=Char_b;
+           Dis_Char[1]=Char_A;
+           Dis_Char[2]=Char_L;    
+           break;
           
           }
           if(Menu1Flag != 1)//进入二级菜单
@@ -326,35 +326,68 @@ void LED_Display(void)
             switch(Menu2Num)
             {
             case 0:
+              /*
+              if(Menu2_0 == 0)
+              {
                 Dis_Char[0]=Char_O;
                 Dis_Char[1]=Char_F;
                 Dis_Char[2]=Char_F;
+                
+                //TapControlFlag = 0;
+              }
+              else
+              {
+                Dis_Char[0]=0;
+                Dis_Char[1]=Char_O;
+                Dis_Char[2]=Char_N;
+                
+                //TapControlFlag = 1;
+              }
+              */
+              
+                Dis_Char[0]=Char_O;
+                Dis_Char[1]=Char_F;
+                Dis_Char[2]=Char_F;
+              
               break;
               
             case 1:
             case 2:
-                  if(TapControlFlag == 0)
+              {
+                /*
+                {
+                    Dis_Char[0] = Char_S;
+                    Dis_Char[1] = Char_E;
+                    Dis_Char[2] = Char_T;   
+                }
+                */
+                  if(TapControlFlag==0)
                   {
-                    Tap_Parameter.TapCtlThreshold = 1600;//2600;
-                    TapControlFlag = 1;
-                    Buffer[70] = TapControlFlag; 
-                    Buffer[72] =Tap_Parameter.TapCtlThreshold; 
-                    Buffer[71] =Tap_Parameter.TapCtlThreshold>>8; 
+                  Tap_Parameter.TapCtlThreshold = 1600;//2600;
+                  TapControlFlag = 1;
+                  Buffer[70] = TapControlFlag; 
+                  Buffer[72] =Tap_Parameter.TapCtlThreshold; 
+                  Buffer[71] =Tap_Parameter.TapCtlThreshold>>8; 
                  
-                    EEPROM_Write();
-                    Dis_Char[0]=0;
-                    Dis_Char[1]=Char_O;
-                    Dis_Char[2]=Char_N;
+                  EEPROM_Write();
+                  Dis_Char[0]=0;
+                  Dis_Char[1]=Char_O;
+                  Dis_Char[2]=Char_N;
                   }
+                  
+                
+                
                 break;
 
+              }
             case 3:
+              {
                 Dis_Char[0] = Char_S;
                 Dis_Char[1] = Char_E;
                 Dis_Char[2] = Char_T;
-                break;
-                
+              }
             case 4: 
+            {
             if ((SysState == NORMAL) && (M2Cmd == CmdNull) && (M1Cmd == CmdNull))
                  {
                    Uart1SendData((u8*)SelfCheckCmd, 7);
@@ -364,16 +397,25 @@ void LED_Display(void)
                    Dis_Char[1] = Char_E;
                    Dis_Char[2] = Char_T;
                  }
-              break;
             
-              default:
+            
+            }
+              
+              
+                default:
                     break;
             }
           }
+          else
+          {
+           // Dis_Char[0]=Char_b;
+           // Dis_Char[1]=Char_;
+           // Dis_Char[2]=Data_Char[Menu2Num];
+          }
         }
-        else if(Menu1Flag == 2) //长按M键后，Menu1Flag = 2,进入此段程序
+        else if(Menu1Flag == 2)
         {
-          switch(Menu2Num)      //长按M键后，Menu1Flag = 2,Menu2Num = 2进入此段程序
+        switch(Menu2Num) 
           {
           case 0:
            if ((SysState == NORMAL) && (M2Cmd == CmdNull) && (M1Cmd == CmdNull))
@@ -400,114 +442,210 @@ void LED_Display(void)
                Dis_Char[0]=Char_O;
                Dis_Char[1]=Char_F;
                Dis_Char[2]=Char_F;
-               break;  
+               break;
                
-             default:break;
+               
+          
+                  
            }
            break;
            
-           case 2:      //进入这里执行
+           case 2:
            
            switch(Menu1Num) 
            {
-            case 0:  
-              Dis_Char[0] = Char_A;
-              Dis_Char[1] = Char_C;
-              Dis_Char[2] = Char_T;      
-            break;
+           case 0:  
            
-            case 1: 
-              Dis_Char[0] = Char_C;
-              Dis_Char[1] = Char_H;
-              Dis_Char[2] = Char_E;
-            break;
-            
-            case 2:  
-              Dis_Char[0] = Char_d;
-              Dis_Char[1] = Char_O;
-              Dis_Char[2] = Char_T; 
-            break;
-            
-             default:break;
-           }
+        
+            Dis_Char[0] = Char_A;
+            Dis_Char[1] = Char_C;
+            Dis_Char[2] = Char_T;      
+                  
+              
+           
+           break;
+           case 1: 
+           
+           
+           Dis_Char[0] = Char_C;
+           Dis_Char[1] = Char_H;
+           Dis_Char[2] = Char_E;
+           
+           
+           
+           break;
+           case 2:  
+           
+           Dis_Char[0] = Char_d;
+           Dis_Char[1] = Char_O;
+           Dis_Char[2] = Char_T; 
+           
+           
            break;
            
-            default:break;
+           }
+           break;
+          
           }
         } 
-        else if(Menu1Flag == 3)         //长按M键后，又短按M键，进入Menu1Flag == 3模式
+        else if(Menu1Flag == 3)
         {
-          if(Menu2Num == 2)                 //长按M键后，Menu2Num == 2
+        if(Menu2Num==2)
           {
            switch(Menu1Num) 
            {
-            case 0:     //显示ACT后，短按M键，进入自平衡执行阶段，显示SET
-            if ((SysState == NORMAL) && (AntiCollisionState == 0) && (Balance_Data.BalanceAdjuseState == 0) &&
-               (M2Cmd == CmdNull) && (M1Cmd == CmdNull))
-                {     
-                  Menu2_0 = 0;      
-                  Tap_Parameter.TapControlEN = 0;
-                  Tap_Parameter.TapControlFlag = 0;
-                  SetBalaceState(1);
-                  Balance_ON = 1;
-                  Buffer[76]= Balance_ON;
-                  EEPROM_Write();
-                  DisableHPSlopeFilter();
-                  Clear_AccDateBuffer();   
-                }
-              Dis_Char[0] = Char_S;
-              Dis_Char[1] = Char_E;
-              Dis_Char[2] = Char_T;
-           break;
+           case 0:  
            
-           case 1:      //显示CHE后，短按M键，进入自检阶段，显示SET
+           if ((SysState == NORMAL) && (AntiCollisionState == 0) && (Balance_Data.BalanceAdjuseState == 0) &&
+               (M2Cmd == CmdNull) && (M1Cmd == CmdNull))
+                {
+                      
+                Menu2_0 = 0;
+                        
+                 //TapControlFlag = 0;
+                        
+                 Tap_Parameter.TapControlEN = 0;
+                 Tap_Parameter.TapControlFlag = 0;
+                 SetBalaceState(1);
+                
+                 DisableHPSlopeFilter();
+        
+                 Clear_AccDateBuffer();   
+                        
+                        //MenuTime = 0;
+                        //Menu1Flag = 0;
+                        //Menu2Flag = 0;
+                        //Menu2Num = 0;
+                }
+           
+           
+            Dis_Char[0] = Char_S;
+            Dis_Char[1] = Char_E;
+            Dis_Char[2] = Char_T;
+          
+           
+           break;
+           case 1: 
+             //
+             if(Y_Off_EN_Fleg==1)
+             {
+             
+             
+             
+             
+             
+             
+             
+            // Y_Off_EN_Fleg=0;
+             }
+            
+             
+                 
+             
+             
+             //AccDataBag.Y_Offset_Spec = (s16)(AccDataBag.ALLAccXl_y >> 3);
+             
+             
+             // 
              Dis_Char[0] = Char_S;
              Dis_Char[1] = Char_E;
              Dis_Char[2] = Char_T; 
              
-           break;       
+            if(Y_Off_EN_Fleg==0)
+            {
+             //AccDataBag.Y_Offset_Spec=0;   
+            // memcpy(&Buffer[73],&AccDataBag.Y_Offset_Spec,sizeof(AccDataBag.Y_Offset_Spec));
+                     
+            // AccDataBag.Y_OffsetFlag_Spec = 0;
+             //memcpy(&Buffer[75],&AccDataBag.Y_OffsetFlag_Spec,sizeof(AccDataBag.Y_OffsetFlag_Spec));       //已获取陀螺仪偏移量的标志位存入EEPR     
+             //EEPROM_Write();
+            // 
+             ///Dis_Char[0]=Char_O;
+            // Dis_Char[1]=Char_F;
+            // Dis_Char[2]=Char_F; 
+            
+            
+            
+            
+            
+            }
+            
+            
+           // }
+                    
+           // AccDataBag.Y_OffsetFlag_Spec = 1;
+            
+           // memcpy(&Buffer[75],&AccDataBag.Y_OffsetFlag_Spec,sizeof(AccDataBag.Y_OffsetFlag_Spec));       //已获取陀螺仪偏移量的标志位存入EEPROM中
+          
+            
+           // EnableHPSlopeFilter();
+          
+            
+          
            
-           case 2:      //显示dOT后，短按M键，进入点动状态，显示SET
+           
+            
+           
+          
+           break;
+           case 2:  
+           
+          // if(Adjust_State==0)Adjust_State=1;
+          
             Dis_Char[0] = Char_S;
             Dis_Char[1] = Char_E;
             Dis_Char[2] = Char_T;
+           
+  
            break;
            
-             default:break;
            }
-          }
           
-          else if(Menu2Num==1)
-          {
-            if(TapControlFlag==0)
-            {
-              Buffer[70] = TapControlFlag;
-              Buffer[71] =0; 
-              Buffer[72] =0;  
-              EEPROM_Write();
-                  
-              Dis_Char[0] = Char_S;
-              Dis_Char[1] = Char_E;
-              Dis_Char[2] = Char_T; 
-            }
-            else if(TapControlFlag==1)
-            {
-              Tap_Parameter.TapCtlThreshold = 1600;//2600;
-                 
-              Buffer[70] = TapControlFlag; 
-              Buffer[72] =Tap_Parameter.TapCtlThreshold; 
-              Buffer[71] =Tap_Parameter.TapCtlThreshold>>8; 
-                 
-              EEPROM_Write();
-              Dis_Char[0] = Char_S;
-              Dis_Char[1] = Char_E;
-              Dis_Char[2] = Char_T;
-           }
+     
+          
+          
           }
-        }  
-        break;
+             else if(Menu2Num==1)
+          {
+          
+          
+           if(TapControlFlag==0)
+                  {
+                   Buffer[70] = TapControlFlag;
+                   Buffer[71] =0; 
+                   Buffer[72] =0;  
+                   EEPROM_Write();
+                  
+                  Dis_Char[0] = Char_S;
+                  Dis_Char[1] = Char_E;
+                  Dis_Char[2] = Char_T; 
+                  }
+           else if(TapControlFlag==1)
+           {
+                  
+                 Tap_Parameter.TapCtlThreshold = 1600;//2600;
+                 
+                  Buffer[70] = TapControlFlag; 
+                  Buffer[72] =Tap_Parameter.TapCtlThreshold; 
+                  Buffer[71] =Tap_Parameter.TapCtlThreshold>>8; 
+                 
+                  EEPROM_Write();
+                  Dis_Char[0] = Char_S;
+                  Dis_Char[1] = Char_E;
+                  Dis_Char[2] = Char_T;
+                 
+              
+           }
+          
+          
+          
+          
+          }
         
-      default:break;
+        }
+            
+            
+        break;
     }
     
     if(CombinationKey != 6)
@@ -540,7 +678,6 @@ void LED_Display(void)
            Com1UartState = SENDBUSY;
            memset(&SendBuffer[0], 0, sizeof(SendBuffer));
            SendBuffer[0] = DisplayLed;
-           
            memcpy(&SendBuffer[1], &Dis_Char[0], 3);
            Cnt = 4;
            PackageSendData(&SendBuffer[0], &Cnt);
@@ -565,8 +702,12 @@ void LED_Display(void)
        {
          Com3UartState = SENDBUSY;
          memset(&SendBuffer[0], 0, sizeof(SendBuffer));
-         SendBuffer[0] = MainBoardPowerOff;
-         Cnt = 1;              
+        // SendBuffer[0] = MainBoardPowerOff;
+         //Cnt = 1;
+         
+         SendBuffer[0] = DisplayLed;
+         Cnt = 4;
+         
          PackageSendData(&SendBuffer[0], &Cnt);
          Uart3SendData(&SendBuffer[0], Cnt);
          DispFlag = 0;
@@ -576,8 +717,12 @@ void LED_Display(void)
        {
          Com1UartState = SENDBUSY;
          memset(&SendBuffer[0], 0, sizeof(SendBuffer));
-        SendBuffer[0] = MainBoardPowerOff;
-         Cnt = 1;        
+         //SendBuffer[0] = MainBoardPowerOff;
+         //Cnt = 1;
+         
+         SendBuffer[0] = DisplayLed;
+         Cnt = 4;
+         
          PackageSendData(&SendBuffer[0], &Cnt);
          Uart1SendData(&SendBuffer[0], Cnt);
          DispFlag = 0;
@@ -592,7 +737,9 @@ void LED_Display(void)
           {
             Com3UartState = SENDBUSY;
             memset(&SendBuffer[0], 0, sizeof(SendBuffer));
-           
+            Dis_Char[0]=0;
+            Dis_Char[1]=0;
+            Dis_Char[2]=0;
             SendBuffer[0] = DisplayLed;
             memcpy(&SendBuffer[1], &Dis_Char[0], 3);
             Cnt = 4;
@@ -614,7 +761,9 @@ void LED_Display(void)
           {
             Com1UartState = SENDBUSY;
             memset(&SendBuffer[0], 0, sizeof(SendBuffer));
-           
+            Dis_Char[0]=0;
+            Dis_Char[1]=0;
+            Dis_Char[2]=0;
             SendBuffer[0] = DisplayLed;
             memcpy(&SendBuffer[1], &Dis_Char[0], 3);
             Cnt = 4;

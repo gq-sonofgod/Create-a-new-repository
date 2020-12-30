@@ -26,7 +26,6 @@ extern u16 DownKeyDelay;
 u8 KEY_Stop_M_Flag=0;
 u8 MenuKeyM = 0; 
 u8 MenuKeyUp = 0;  
-u8 DisplayRemind=1;
 //上按键标志位
 u8 MenuKeyDown = 0;         //下按键标志位
 u8 Menu1Flag = 0;           //进入一级菜单标志位     0：未进入    1：已进入
@@ -83,8 +82,6 @@ u16 sensTimer=0;
 u8 sensKeyFlag=0;
 u8 RunCntFlag = 0;
 u8 BlockFlag = 0;
-extern u8 DisMode=0;
-u8 RST_Sat=0;
 /***********************************************************************************************************
 * 函数名称: KeyScan()
 * 输入参数: value  测得的按键的ADC值
@@ -297,13 +294,9 @@ u16 Com1GetValue(u16 value)
         cnt = 1;
 
         PackageSendData(&SendBuffer[0], &cnt);  //根据通信协议，封装要发送的数据
+
         Uart1SendData(&SendBuffer[0], cnt);     //发送数据
-        
-        /*
-        RST_Sat=RST-> SR&0x1f;
-        SendBuffer[0] =RST_Sat|0xa0;
-        Uart1SendData(&SendBuffer[0],1);
-        */
+
         Com1UartState = WAIT;                   //进入等待外部数据状态
 
     }
@@ -790,26 +783,13 @@ void KeyRespond(u16 value)
 {  
   Key = KeyScan(value);
   
-  if(InitFlag!= 0)
-  {
-  Key = KEY_NULL;
-  
-  }
   if(Key != KEY_NULL)
   {
     LEDRest = 0;
-    
   }
   if((sensKeyFlag != 0) && (Key != KEY_SENS)&&(Key != KEY_NULL))
   {
     Key = 0x99;                         //无效
-    Menu1Flag=0;//修改的，长按灵敏度按键后，快速点按A键，在按上下键没响应的问题
-    Menu2Flag=0;
-    Menu1Num=0;
-    Menu2Num=0;
-    Menu3Num=0;
-    
-    
   }
   if((ErrCode == Err_TimeEnd)||(ErrCode == Err_Overheating))    //运行时间到(连续运行2分钟) 和电机过热情况下，按键无效
   {
@@ -825,7 +805,7 @@ void KeyRespond(u16 value)
   }
   if(KeyDisable == 1)
   {
-    Key = KEY_NULL;
+    //Key = KEY_NULL;
   }
   if((HealthMode == 6)||(HealthMode == 5))
   {
@@ -854,7 +834,7 @@ void KeyRespond(u16 value)
       Balance_Data.BalanceAdjuseState = 4;
       Balance_Data.MotorSlideTimerCnt = 200;
       //}
-      HealthModeReset();  
+      
         
      }   
   }
@@ -881,8 +861,31 @@ void KeyRespond(u16 value)
   switch(Key)
       
   {
+     /*case KEY_Stop_M:
+    { 
+     if(Balance_Data.BalanceAdjuseState != 0)
+     {
+      M1Up(OFF);
+      M1Down(OFF);
+      M2Up(OFF);
+      M2Down(OFF);
+      M1_PWM_OFF;
+      M1Dir = STOP;
+      M1Cmd = CmdStop;    //电机进入停止状态           
+      M2_PWM_OFF;
+      M2Dir = STOP;
+      M2Cmd = CmdStop;
+      KEY_Stop_M_Flag=1;      
+      Balance_Data.BalanceAdjuseState = 4;
+      Balance_Data.MotorSlideTimerCnt = 0;
+         
+     }
+     
+    
+    
+    }
+    break;*/
     case KEY_UP:  //向上键
-       
       if((SysState != RESET)&&(AntiCollisionState == 0))        //SysState = NORMAL
       {       
         if(SysCmd == CmdToPreseting) //(先判断是否需要急停)   //运动到预设的位置命令
@@ -899,113 +902,172 @@ void KeyRespond(u16 value)
           SysCmd = CmdNull;
           M1Dir = 0;
           M2Dir = 0;
-          Release = 0;         
+          Release = 0;
+          
+          SetM1BeforeRunState(0); 
+          SetM2BeforeRunState(0);
+          EnableHPSlopeFilter();
           
         }//正常刚进入UP键功能
         else if(((SysCmd == CmdNull)&&(Release==1))||(Adjust_State==2)/*||(LastKey==KEY_DOWN)*/)   //Release = 1，系统处于空闲状态  
         {
+          /*
+          if(SaveState == BEGIN)        //正在存储
+          {
+            if ((SysState == NORMAL) && (AntiCollisionState == 0) && (Balance_Data.BalanceAdjuseState == 0) &&
+                (M2Cmd == CmdNull) && (M1Cmd == CmdNull))
+            {
+       
+                SetBalaceState(1);
+                
+                DisableHPSlopeFilter();
+        
+                Clear_AccDateBuffer();
+        
+                SaveState = END;
+                
+                Dis_Char[0] = Char_S;
+                Dis_Char[1] = Char_E;
+                Dis_Char[2] = Char_T;
+                Key = KEY_NULL;
+            }
+          }
+          */
           if ((SaveState == BEGIN) || (Menu1Flag == 1)||((Menu1Flag == 2)&&(Menu2Num==2))||((Menu1Flag == 2)&&(Menu2Num==1)))
           {
-            SaveState = NULL;
-            MenuTime = 0;
-            InvalidFlag = 0;
+               
+              
+              
+                  SaveState = NULL;
+                  MenuTime = 0;
+                  InvalidFlag = 0;
+               /* if(Menu1Flag == 0)        //进入菜单模式
+                {
+                    Menu1Flag = 1;
+                    DisplayMode = MenuMode;
+                    UpKeyDelay = 0;
+                }
+                else
+                {*/
                   
-            if((Menu1Flag == 1)||((Menu1Flag == 2)&&(Menu2Num==2))||((Menu1Flag == 2)&&(Menu2Num==1))) 
-            {
-              if ((UpKeyDelay >= 400) && (MenuKeyUp == 0) )
-              {
-                 MenuKeyUp = 1;
-                 UpKeyDelay = 0;
-               }
-             }
-             Key = KEY_NULL;
+                    if((Menu1Flag == 1)||((Menu1Flag == 2)&&(Menu2Num==2))||((Menu1Flag == 2)&&(Menu2Num==1))) 
+                    {
+                    if ((UpKeyDelay >= 400) && (MenuKeyUp == 0) )
+                    {
+                        MenuKeyUp = 1;
+                        
+                        UpKeyDelay = 0;
+                    }
+                    }
+                
+                Key = KEY_NULL;
           }
           else
-          {  
-            if(Adjust_State == 2)  
+          {
+              
+            if(Adjust_State==2)  
             {
-              //DeleteSavedHeight();                            //SaveFlag = 0;删除两个电机当前位置EEPROM中的存储值（M1State.HallNow，M2State.HallNow）
+            //Release = 0;
+            DeleteSavedHeight();                            //SaveFlag = 0;删除两个电机当前位置EEPROM中的存储值（M1State.HallNow，M2State.HallNow）
            // HealthModeReset();  
             //重置健康模式的计时
-              if(KeyUpCnt < 200)
-              {
-                u16 hall_diff;
-                if (M2State.HallNow > M1State.HallNow)
-                { 
-                  hall_diff = M2State.HallNow - M1State.HallNow;
-                }
-                else 
-                {
-                  hall_diff = 0 ; 
-                } 
-                if (hall_diff < MAX_HALL_DIFF)  //最大40cm高度差
-                {
-                  DeleteSavedHeight(); 
-                    
-                  SysCmd = CmdUp;
+         if(KeyUpCnt<200)
+         {
+               
+         u16 hall_diff;
+          if (M2State.HallNow > M1State.HallNow)
+           { 
+                hall_diff = M2State.HallNow - M1State.HallNow;
+           }
+          else 
+          {
+                hall_diff = 0 ; 
+           }
+          
+          //if (hall_diff > 6515)     //最大40cm高度差
+            if (hall_diff < MAX_HALL_DIFF) 
+          {
+            SysCmd = CmdUp;
                             //从定时器方面，直接设置初始PWM占空比
-                  M2Cmd = CmdUp;
-                  SetTIM1_PWMDuty(2, 1350-BASEDUTYUP); 
-                  PID_Set(8,BASEDUTYUP);                      //设置PID参数，包括给到转速，PID方面初始PWM占空比
-                  M2PID.SetSpeed = MINSPEED;
+          
+            M2Cmd = CmdUp;
+            SetTIM1_PWMDuty(2, 1350-BASEDUTYUP); 
+             PID_Set(8,BASEDUTYUP);                      //设置PID参数，包括给到转速，PID方面初始PWM占空比
+            M2PID.SetSpeed = MINSPEED;
             
-                  if(InvalidFlag == 0)                            //此标志位表示是否有按键值，为0这说明无按键，
-                    InvalidFlag = 1;
+            if(InvalidFlag == 0)                            //此标志位表示是否有按键值，为0这说明无按键，
+              InvalidFlag = 1;
             
-                  RunCntFlag = 1;                                 //运行标志位
+            RunCntFlag = 1;                                 //运行标志位
             
-                  if(HealthMode == 4)
-                  {
-                    HealthMode = 2;
-                    T2sCnt = 1000;
-                  }  
-                }  
-              }
-              else
-              {
-                M1Up(OFF);
-                M1Down(OFF);
-                M1_PWM_OFF;
-                M2Up(OFF);
-                M2Down(OFF);
-                M2_PWM_OFF;
-                PID_Set(Speed,BASEDUTYDOWN);
-                M1Cmd = CmdNull;
-                M2Cmd = CmdNull; 
-                SysCmd = CmdNull;
-                M1Dir = 0;
-                M2Dir = 0;
-                Release = 0;  
-              }           //从定时器方面，直接设置初始PWM占空比 
-            }
-            else //正常按键操作
+            if(HealthMode == 4)
             {
-              Release = 0;
-              DeleteSavedHeight();                            //SaveFlag = 0;删除两个电机当前位置EEPROM中的存储值（M1State.HallNow，M2State.HallNow）
-              HealthModeReset();                              //重置健康模式的计时
-              SysCmd = CmdUp;
-              M1Cmd = CmdUp;
-              SetTIM1_PWMDuty(1, 1350-BASEDUTYUP);            //从定时器方面，直接设置初始PWM占空比
-          
-              M2Cmd = CmdUp;
-              SetTIM1_PWMDuty(2, 1350-BASEDUTYUP);            //从定时器方面，直接设置初始PWM占空比 
-          
-              PID_Set(Speed,BASEDUTYUP);                      //设置PID参数，包括给到转速，PID方面初始PWM占空比
-
-              if(InvalidFlag == 0)                            //此标志位表示是否有按键值，为0这说明无按键，
-              {
-                InvalidFlag = 1;
-              }
+              HealthMode = 2;
+              T2sCnt = 1000;
+            }  
+           }  
+               
             
-              RunCntFlag = 1;                                 //运行标志位   
-              if(HealthMode == 4)
-              {
-                  HealthMode = 2;
-                  T2sCnt = 1000;
-              } 
-            }     
+            //Key = KEY_NULL;
+            
+           }
+          else
+            {
+          M1Up(OFF);
+          M1Down(OFF);
+          M1_PWM_OFF;
+          M2Up(OFF);
+          M2Down(OFF);
+          M2_PWM_OFF;
+          PID_Set(Speed,BASEDUTYDOWN);
+          M1Cmd = CmdNull;
+          M2Cmd = CmdNull; 
+          SysCmd = CmdNull;
+          M1Dir = 0;
+          M2Dir = 0;
+          Release = 0;
+          
+          SetM1BeforeRunState(0); 
+          SetM2BeforeRunState(0);
+          EnableHPSlopeFilter();
+          //Balance_Data_Refresh();  
+            }           //从定时器方面，直接设置初始PWM占空比 
+          
+           
+            
+            }
+            else 
+            {
+            Release = 0;
+            DeleteSavedHeight();                            //SaveFlag = 0;删除两个电机当前位置EEPROM中的存储值（M1State.HallNow，M2State.HallNow）
+            HealthModeReset();                              //重置健康模式的计时
+            SysCmd = CmdUp;
+            M1Cmd = CmdUp;
+            SetTIM1_PWMDuty(1, 1350-BASEDUTYUP);            //从定时器方面，直接设置初始PWM占空比
+          
+            M2Cmd = CmdUp;
+            SetTIM1_PWMDuty(2, 1350-BASEDUTYUP);            //从定时器方面，直接设置初始PWM占空比 
+          
+            PID_Set(Speed,BASEDUTYUP);                      //设置PID参数，包括给到转速，PID方面初始PWM占空比
+            
+            
+            if(InvalidFlag == 0)                            //此标志位表示是否有按键值，为0这说明无按键，
+              InvalidFlag = 1;
+            
+            RunCntFlag = 1;                                 //运行标志位
+            
+            if(HealthMode == 4)
+            {
+              HealthMode = 2;
+              T2sCnt = 1000;
+            } 
+            
+            
+            }
+            
           }
         }
+        
         else if((LastKey == Key)&&(InvalidFlag == 2))       //在上次按向上键释放后短时间内再次按下向上键
         {
           InvalidFlag = 1;
@@ -1016,13 +1078,12 @@ void KeyRespond(u16 value)
         {
           KeyNullProcess();
         }
-      
+        
         LastKey = Key;
       }
       break;
       
-      case KEY_DOWN: //向下键
-       
+    case KEY_DOWN: //向下键
       if(AntiCollisionState==0) //没触发遇阻状态
       {  
         if(SysCmd == CmdToPreseting)
@@ -1040,117 +1101,250 @@ void KeyRespond(u16 value)
           M1Dir = 0;
           M2Dir = 0;
           Release = 0;
+          
+          SetM1BeforeRunState(0); 
+          SetM2BeforeRunState(0);
+         // EnableHPSlopeFilter();
         }
         else if((Menu1Flag == 1)||((Menu1Flag == 2)&&(Menu2Num==2))||((Menu1Flag == 2)&&(Menu2Num==1)))//已经进入一级菜单模式
         {
           MenuTime = 0;
           SaveState = NULL;
                  
-          InvalidFlag = 0;
+                  InvalidFlag = 0;
+               /* if(Menu1Flag == 0)        //进入菜单模式
+                {
+                    Menu1Flag = 1;
+                    DisplayMode = MenuMode;
+                    UpKeyDelay = 0;
+                }
+                else
+                {*/
                   
-          if((Menu1Flag == 1)||((Menu1Flag == 2)&&(Menu2Num==2))||((Menu1Flag == 2)&&(Menu2Num==1))) 
-          {
-            if ((DownKeyDelay >= 400) && (MenuKeyDown == 0) )
-            {
-              MenuKeyDown = 1;          
-              DownKeyDelay = 0;
+                    if((Menu1Flag == 1)||((Menu1Flag == 2)&&(Menu2Num==2))||((Menu1Flag == 2)&&(Menu2Num==1))) 
+                    {
+                    if ((DownKeyDelay >= 400) && (MenuKeyDown == 0) )
+                    {
+                        MenuKeyDown = 1;
+                        
+                        DownKeyDelay = 0;
+                    }
+                    }
+                
+                Key = KEY_NULL;
+          
+          
+          
+          
+          
+          
+          
+          
+         // if(Menu2Flag == 0)//进入二级菜单
+         // {
+         //    Menu2Flag = 1;
+         //    MenuTime = 3000;       //二级菜单确认后，菜单模式再显示2S
+             /*
+             if (Menu2Num == 0)
+             {
+                if (Menu2_0 == 0)
+                {
+                    Menu2_0 = 1;
+                    TapControlFlag = 1;
+                }
+                else 
+                {
+                  Menu2_0 = 0;
+                  TapControlFlag = 0;
+                }
              }
-           }
-           Key = KEY_NULL;        
+             */
+            // switch(Menu2Num)
+           //  {
+               // case 0:
+
+                      /*
+                        if (Menu2_0 == 0)
+                        {
+                            Menu2_0 = 1;
+                            TapControlFlag = 1;
+                        }
+                        else 
+                        {
+                            Menu2_0 = 0;
+                            TapControlFlag = 0;
+                        }
+                        */
+                    /*  TapControlFlag = 0;
+                      Buffer[70] = TapControlFlag;
+                      Buffer[71] =0; 
+                      Buffer[72] =0;  
+                      EEPROM_Write();
+                      
+                    break;
+                case 1:
+                  Tap_Parameter.TapCtlThreshold = 2000;//2600;
+                  TapControlFlag = 1;
+                  Buffer[70] = TapControlFlag; 
+                  Buffer[72] =Tap_Parameter.TapCtlThreshold; 
+                  Buffer[71] =Tap_Parameter.TapCtlThreshold>>8; 
+                 
+                  EEPROM_Write();
+
+                  break;
+                case 2:
+                  Tap_Parameter.TapCtlThreshold = 1600;//2000;
+                  TapControlFlag = 1;
+                  Buffer[70] = TapControlFlag; 
+                  Buffer[72] =Tap_Parameter.TapCtlThreshold; 
+                  Buffer[71] =Tap_Parameter.TapCtlThreshold>>8; 
+                   
+                  EEPROM_Write();
+
+                  break;
+                   
+                case 3:
+                  {
+                    if ((SysState == NORMAL) && (AntiCollisionState == 0) && (Balance_Data.BalanceAdjuseState == 0) &&
+                        (M2Cmd == CmdNull) && (M1Cmd == CmdNull))
+                    {
+                      
+                        Menu2_0 = 0;
+                        
+                        //TapControlFlag = 0;
+                        
+                        Tap_Parameter.TapControlEN = 0;
+                        Tap_Parameter.TapControlFlag = 0;
+                        SetBalaceState(1);
+                
+                        DisableHPSlopeFilter();
+        
+                        Clear_AccDateBuffer();   
+                        
+                        //MenuTime = 0;
+                        //Menu1Flag = 0;
+                        //Menu2Flag = 0;
+                        //Menu2Num = 0;
+                    }
+                    break;
+                  }
+                   
+             default:break; 
+                    
+             }
+             //DownKeyDelay = 0;
+          }*/
+          
+          Key = KEY_NULL;
+          /*
+          else
+          {
+            if(MenuKeyDown == 0)
+            {
+              MenuKeyDown = 1;
+            }
+          }
+          */
         }
         else if((SysCmd == CmdNull)||(Adjust_State==2)/*||(LastKey==KEY_UP)*/)
         {         
           u16 halltemp;
           if((SysState == NORMAL)&&(Release == 1)&&(AntiCollisionState==0))
           {
-              //HealthModeReset();
             //if(((M1State.HallNow + M2State.HallNow)>(M1State.LimitDown+M2State.LimitDown+13)))
             halltemp = MIN(M1State.HallNow,M2State.HallNow); // (a<=b? a: b)
             if ((halltemp > ((M1State.LimitDown + M2State.LimitDown)/2 +13))||(Adjust_State==2))
             {
-              if(Adjust_State == 2)
+              if(Adjust_State==2)
               {
-                if(KeyDownCnt < 200)
-                {
-                  u16 hall_diff;
-                  if (M2State.HallNow > M1State.HallNow)
-                  { 
-                    hall_diff =0;
-                  }
-                  else 
-                  {
-                    hall_diff = M1State.HallNow - M2State.HallNow ; 
-                  }
-                  //if (hall_diff > 6515)     //最大40cm高度差
-                  if (hall_diff < MAX_HALL_DIFF) 
-                  {        
-                    DeleteSavedHeight();
-                    //HealthModeReset();
-                    SysCmd = CmdDown;
-                    M2Cmd = CmdDown;
-                    SetTIM1_PWMDuty(2,1350-BASEDUTYDOWN); 
-                    PID_Set(8,BASEDUTYDOWN);
-                    //Release = 0;
-                    if(InvalidFlag==0)
-                    {
-                      InvalidFlag = 1;
-                    }
-                    RunCntFlag = 1;
-                    if(HealthMode == 4)
-                    {
-                      HealthMode = 2;
-                      T2sCnt = 1000;
-                    }
-                  }
-                }
-                else   
-                {
-                  M1Up(OFF);
-                  M1Down(OFF);
-                  M1_PWM_OFF;
-                  M2Up(OFF);
-                  M2Down(OFF);
-                  M2_PWM_OFF;
-                  PID_Set(Speed,BASEDUTYUP);
-                  M1Cmd = CmdNull;
-                  M2Cmd = CmdNull;
-                  SysCmd = CmdNull;
-                  M1Dir = 0;
-                  M2Dir = 0;
-                  InvalidFlag = 1; 
-                }
-              }
-              else //正常按键操作
+              if(KeyDownCnt<200)
               {
-                DeleteSavedHeight();
-                HealthModeReset();
-                SysCmd = CmdDown;
-                M1Cmd = CmdDown;
-                SetTIM1_PWMDuty(1,1350-BASEDUTYDOWN);
-                M2Cmd = CmdDown;
-                SetTIM1_PWMDuty(2,1350-BASEDUTYDOWN); 
+               u16 hall_diff;
+          if (M2State.HallNow > M1State.HallNow)
+           { 
+                hall_diff =0;
+           }
+          else 
+          {
+                hall_diff = M1State.HallNow - M2State.HallNow ; 
+           }
+          
+          //if (hall_diff > 6515)     //最大40cm高度差
+            if (hall_diff < MAX_HALL_DIFF) 
+          {   
+                  
+              DeleteSavedHeight();
+              //HealthModeReset();
+              SysCmd = CmdDown;
+              M2Cmd = CmdDown;
+              SetTIM1_PWMDuty(2,1350-BASEDUTYDOWN); 
+               
               
-                PID_Set(Speed,BASEDUTYDOWN);
-                Release = 0;
-                if(InvalidFlag==0)
-                {
-                  InvalidFlag = 1;
-                }
-                RunCntFlag = 1;
-                if(HealthMode == 4)
-                {
-                  HealthMode = 2;
-                  T2sCnt = 1000;
-                }
+              PID_Set(8,BASEDUTYDOWN);
+              //Release = 0;
+              if(InvalidFlag==0)
+                InvalidFlag = 1;
+              RunCntFlag = 1;
+              if(HealthMode == 4)
+              {
+                HealthMode = 2;
+                T2sCnt = 1000;
               }
+          }
+              }
+              else
+                  
+              {
+              M1Up(OFF);
+            M1Down(OFF);
+            M1_PWM_OFF;
+            M2Up(OFF);
+            M2Down(OFF);
+            M2_PWM_OFF;
+            PID_Set(Speed,BASEDUTYUP);
+            M1Cmd = CmdNull;
+            M2Cmd = CmdNull;
+            SysCmd = CmdNull;
+            M1Dir = 0;
+            M2Dir = 0;
+            InvalidFlag = 1;
+            
+            SetM1BeforeRunState(0); 
+            SetM2BeforeRunState(0);
+            EnableHPSlopeFilter();
+            Balance_Data_Refresh();  
+              
+              }
+              
+              }
+              else
+              {
+              DeleteSavedHeight();
+              HealthModeReset();
+              SysCmd = CmdDown;
+              M1Cmd = CmdDown;
+              SetTIM1_PWMDuty(1,1350-BASEDUTYDOWN);
+              M2Cmd = CmdDown;
+              SetTIM1_PWMDuty(2,1350-BASEDUTYDOWN); 
+              
+              PID_Set(Speed,BASEDUTYDOWN);
+              Release = 0;
+              if(InvalidFlag==0)
+                InvalidFlag = 1;
+              RunCntFlag = 1;
+              if(HealthMode == 4)
+              {
+                HealthMode = 2;
+                T2sCnt = 1000;
+              }
+              
+              
+              }
+              
             }
             else if(RSTFlag == 0)
             {
               RSTFlag = 1;
-            }
-            else 
-            {
-                HealthModeReset();
             }
           }
           else if((SysState == RESET)&&((Release==3)||(Release==1)))
@@ -1158,7 +1352,7 @@ void KeyRespond(u16 value)
             BuzzerState = OFF;
             if(Release == 3)
               Release = 1;
-            if((ErrCode != 0)&&(ErrCode != Err_RESET))
+            if((ErrCode!=0)&&(ErrCode!=Err_RESET))
             {
               ErrCode = Err_RESET;
               memcpy(&Buffer[0],&ErrCode,sizeof(ErrCode));
@@ -1195,9 +1389,8 @@ void KeyRespond(u16 value)
       break;
     
     case KEY_M1: //位置存储1键
-       if(((SysState != RESET)&&((Menu1Flag ==4)||(Menu1Flag ==0)))&&(Adjust_State==0))
+       if((SysState != RESET)&&((Menu1Flag ==4)||(Menu1Flag ==0)))
       {
-          //HealthModeReset();
         if(SysCmd == CmdToPreseting)
         {
           if(InvalidFlag==0)
@@ -1215,11 +1408,13 @@ void KeyRespond(u16 value)
             M1Dir = 0;
             M2Dir = 0;
             InvalidFlag = 1;
+            
+            SetM1BeforeRunState(0); 
+            SetM2BeforeRunState(0);
+            EnableHPSlopeFilter();
           }            
           else if(InvalidFlag == 2) //按键去抖动效果
-          {
             InvalidCnt = 0;        
-          }
         }
         else if(SaveState == BEGIN)//正在存储       //BEGIN  = 1  
         {
@@ -1232,18 +1427,38 @@ void KeyRespond(u16 value)
         {
           if(InvalidFlag == 0)
           {
-            if(SaveIndex&0x01)              //第一个存储位置存在
-            {    
-              HealthModeReset();                    
-              M1Cmd = CmdToPreseting;
-              SetTIM1_PWMDuty(1,1350-BASEDUTYDOWN);
-              M2Cmd = CmdToPreseting;
-              SetTIM1_PWMDuty(2,1350-BASEDUTYDOWN);
-              SysCmd = CmdToPreseting;
-              PID_Set(Speed,BASEDUTYDOWN);
-              Position = 0;
-              InvalidFlag = 1;          
-             }
+                if(SaveIndex&0x01)              //第一个存储位置存在
+                {    
+                  /*  //运行到指定位置操作时，进行平衡度检测操作
+                    if (GetM1BeforeRunState() == 0)
+                    {                
+                        DisableHPSlopeFilter();
+        
+                        Clear_AccDateBuffer();
+                
+                        M1Cmd = CmdToPreseting;
+                        M2Cmd = CmdToPreseting;
+                
+                        SysCmd = CmdToPreseting;
+                        SetM1BeforeRunState(1); 
+                        SetM2BeforeRunState(1);   
+                        Position = 0;
+                        InvalidFlag = 1;       
+                        
+                    }     
+                    */
+                    
+                    HealthModeReset();                    
+                    M1Cmd = CmdToPreseting;
+                    SetTIM1_PWMDuty(1,1350-BASEDUTYDOWN);
+                    M2Cmd = CmdToPreseting;
+                    SetTIM1_PWMDuty(2,1350-BASEDUTYDOWN);
+                    SysCmd = CmdToPreseting;
+                    PID_Set(Speed,BASEDUTYDOWN);
+                    Position = 0;
+                    InvalidFlag = 1;    
+                     
+                }
           }
           else if(InvalidFlag == 2)
           {
@@ -1254,9 +1469,8 @@ void KeyRespond(u16 value)
       break;
       
     case KEY_M2: //位置存储2键
-       if(((SysState != RESET)&&((Menu1Flag ==4)||(Menu1Flag ==0)))&&(Adjust_State==0))
+       if((SysState != RESET)&&((Menu1Flag ==4)||(Menu1Flag ==0)))
       {
-         // HealthModeReset();
         if(SysCmd == CmdToPreseting)
         {
           if(InvalidFlag==0)
@@ -1274,6 +1488,10 @@ void KeyRespond(u16 value)
             M1Dir = 0;
             M2Dir = 0;
             InvalidFlag = 1;
+            
+            SetM1BeforeRunState(0); 
+            SetM2BeforeRunState(0);
+            EnableHPSlopeFilter();
           }
           else if(InvalidFlag == 2)
             InvalidCnt = 0;
@@ -1290,7 +1508,25 @@ void KeyRespond(u16 value)
           if(InvalidFlag == 0)
           {
             if(SaveIndex&0x02) //第二个存储位置存在
-            {       
+            {
+              /*  //运行到指定位置操作时，进行平衡度检测操作
+              if (GetM1BeforeRunState() == 0)
+                {                
+                    DisableHPSlopeFilter();
+        
+                    Clear_AccDateBuffer();
+                
+                    M1Cmd = CmdToPreseting;
+                    M2Cmd = CmdToPreseting;
+                
+                    SysCmd = CmdToPreseting;
+                    SetM1BeforeRunState(1); 
+                    SetM2BeforeRunState(1);  
+                    Position = 1;
+                    InvalidFlag = 1;                    
+                }
+                */
+                
                  HealthModeReset();             
                  M1Cmd = CmdToPreseting;
                  SetTIM1_PWMDuty(1,1350-BASEDUTYDOWN);
@@ -1311,9 +1547,8 @@ void KeyRespond(u16 value)
       break;
       
     case KEY_M3: //位置存储3键
-       if(((SysState != RESET)&&((Menu1Flag ==4)||(Menu1Flag ==0)))&&(Adjust_State==0))
+       if((SysState != RESET)&&((Menu1Flag ==4)||(Menu1Flag ==0)))
       {
-          //HealthModeReset();
         if(SysCmd == CmdToPreseting)
         {
           if(InvalidFlag == 0)
@@ -1332,6 +1567,11 @@ void KeyRespond(u16 value)
             M1Dir = 0;
             M2Dir = 0;
             InvalidFlag = 1;
+            
+            SetM1BeforeRunState(0); 
+            SetM2BeforeRunState(0);
+            EnableHPSlopeFilter();
+
           }
           else if(InvalidFlag == 2)
             InvalidCnt = 0;
@@ -1348,7 +1588,25 @@ void KeyRespond(u16 value)
           if(InvalidFlag == 0)
           {
             if(SaveIndex&0x04) //第三个存储位置存在
-            { 
+            {
+               /*  //运行到指定位置操作时，进行平衡度检测操作
+               if (GetM1BeforeRunState() == 0)
+                {                
+                    DisableHPSlopeFilter();
+        
+                    Clear_AccDateBuffer();
+                
+                    M1Cmd = CmdToPreseting;
+                    M2Cmd = CmdToPreseting;
+                
+                    SysCmd = CmdToPreseting;
+                    SetM1BeforeRunState(1); 
+                    SetM2BeforeRunState(1);
+                    Position = 2;
+                    InvalidFlag = 1;                                       
+                }
+                */
+                    
                 HealthModeReset();
                 M1Cmd = CmdToPreseting;
                 SetTIM1_PWMDuty(1,1350-BASEDUTYDOWN);
@@ -1386,7 +1644,14 @@ void KeyRespond(u16 value)
             SysCmd = CmdNull;
             M1Dir = 0;
             M2Dir = 0;
-            InvalidFlag = 1; 
+            InvalidFlag = 1;
+            
+            
+            SetM1BeforeRunState(0); 
+            SetM2BeforeRunState(0);
+            EnableHPSlopeFilter();
+            
+            
           }
           else if(InvalidFlag == 2)
             InvalidCnt = 0;
@@ -1442,6 +1707,11 @@ void KeyRespond(u16 value)
             M1Dir = 0;
             M2Dir = 0;
             InvalidFlag = 1;
+            
+            SetM1BeforeRunState(0); 
+            SetM2BeforeRunState(0);
+            EnableHPSlopeFilter();
+            
           }
           else if(InvalidFlag == 2)
             InvalidCnt = 0;
@@ -1459,7 +1729,26 @@ void KeyRespond(u16 value)
             SetTIM1_PWMDuty(2,1350-BASEDUTYDOWN);
             SysCmd = CmdToPreseting;
             PID_Set(Speed,BASEDUTYDOWN);
-            InvalidFlag = 1;          
+            InvalidFlag = 1; 
+            
+            /* ////运行到指定位置操作时，进行平衡度检测操作
+            if (GetM1BeforeRunState() == 0)
+            {                
+                DisableHPSlopeFilter();
+        
+                Clear_AccDateBuffer();
+                
+                M1Cmd = CmdToPreseting;
+                M2Cmd = CmdToPreseting;
+                
+                SysCmd = CmdToPreseting;
+                SetM1BeforeRunState(1); 
+                SetM2BeforeRunState(1); 
+                Position = 4;
+                InvalidFlag = 1;
+                   
+            } 
+            */
           }
           else if(InvalidFlag == 2)
             InvalidCnt = 0;
@@ -1470,18 +1759,15 @@ void KeyRespond(u16 value)
     case KEY_MENU: 
      if((SysState != RESET)&&(Adjust_State==0))
       {
-       DisplayMode = MenuMode;
+       DisplayMode=MenuMode;
        //Menu2Flag = 1;  
-       Menu1Flag = 2;
-       Menu2Num = 2;
+       Menu1Flag = 1; 
        MenuTime = 0;
-       DisplayRemind = OFF;
-       Check_EN=2;
-       //HealthModeReset();
       }
      ;   
     break;            
               
+    
     case KEY_MEM: //存储键
        
       if((SysState != RESET))
@@ -1500,29 +1786,19 @@ void KeyRespond(u16 value)
           SysCmd = CmdNull;
           M1Dir = 0;
           M2Dir = 0;
+          
+          SetM1BeforeRunState(0); 
+          SetM2BeforeRunState(0);
+          EnableHPSlopeFilter();
+          
         }
        
         else if((Menu1Flag == 1))
         {
-          Menu1Flag =2;         
-          SaveState = NULL;
-          MenuTime = 0;
-          InvalidFlag = 0;
-
-          if ((UpKeyDelay >= 400) && (MenuKeyM == 0) )
-          {
-             MenuKeyM = 1;
-                        
-             UpKeyDelay = 0;
-           }     
-        
-        }
-        else if(((Menu1Flag ==2)&&(Menu2Num==2))||((Menu1Flag ==2)&&(Menu2Num==1)))
-        {
-          Menu1Flag =3;         
-          SaveState = NULL;
-          MenuTime = 0;
-          InvalidFlag = 0;
+        Menu1Flag =2;         
+        SaveState = NULL;
+        MenuTime = 0;
+        InvalidFlag = 0;
 
          if ((UpKeyDelay >= 400) && (MenuKeyM == 0) )
             {
@@ -1530,8 +1806,28 @@ void KeyRespond(u16 value)
                         
              UpKeyDelay = 0;
              }     
+        
         }
-        else if(Adjust_State == 2)    
+        else if(((Menu1Flag ==2)&&(Menu2Num==2))||((Menu1Flag ==2)&&(Menu2Num==1)))
+        {
+        
+        Menu1Flag =3;         
+        SaveState = NULL;
+        MenuTime = 0;
+        InvalidFlag = 0;
+
+         if ((UpKeyDelay >= 400) && (MenuKeyM == 0) )
+            {
+             MenuKeyM = 1;
+                        
+             UpKeyDelay = 0;
+             }     
+        
+        
+        
+        }
+        else if(Adjust_State==2)
+            
         {
         SaveState = NULL;
         MenuTime = 0;
@@ -1539,36 +1835,49 @@ void KeyRespond(u16 value)
 
          if ((UpKeyDelay >= 400) && (MenuKeyM == 0) )
             {
-              MenuKeyM = 1;
+             MenuKeyM = 1;
                         
-              UpKeyDelay = 0;
+             UpKeyDelay = 0;
              }     
+        
+        
         }
         else if((SysCmd != CmdToPreseting)&&(KeyMValid!=2)&&(Adjust_State==0))
         {     
-          SaveState = 1;
-          Menu1Flag =4;
+         SaveState = 1;
+         Menu1Flag =4;
           MemCnt = 0;
           MenuTime = 0;
           if(HealthMode==1)
-          {
             HealthMode = 4;
-          }
-          HealthModeReset();
           DisplayMode = SaveMode;
           Dis_Char[0] = Char_S;
           Dis_Char[1] = Char_;
           Dis_Char[2] = 0;
         }      
       }
+      
+      /*
+      if ((SysState == NORMAL) && (Release == 1) && (AntiCollisionState == 0) && (Balance_Data.BalanceAdjuseState == 0) &&
+          (SysCmd == CmdNull) && (M2Cmd == CmdNull) && (M1Cmd == CmdNull))
+      {
+        //Balance_Data.BalanceAdjuseState = 1;     
+        
+        SetBalaceState(1);
+        
+        DisableHPSlopeFilter();
+        
+        Clear_AccDateBuffer();
+        
+      }
+      
+      */
       break;
     
       
     case KEY_A: //自动提醒按键
       if((SysState != RESET)&&(Adjust_State==0))
-      {   Menu1Flag =0;
-          Check_EN=0;
-          BuzzerState = OFF;
+      {
         if(SysCmd == CmdToPreseting)
         {
           M1Up(OFF);
@@ -1582,13 +1891,19 @@ void KeyRespond(u16 value)
           M2Cmd = CmdNull;
           SysCmd = CmdNull;
           M1Dir = 0;
-          M2Dir = 0;        
+          M2Dir = 0;
+          
+          SetM1BeforeRunState(0); 
+          SetM2BeforeRunState(0);
+          EnableHPSlopeFilter();
         }
-       
+        else if (DisplayMode == MenuMode)
+        {
+          ;
+        }
         else if(KeyAValid!=2)   //KeyAValid = 0;  //A键无效标志 初始为0
         {
           HealthModeON();
-          DisplayRemind=ON;
         }     
       }
       break;
@@ -1602,42 +1917,11 @@ void KeyRespond(u16 value)
           HealthModeOFF();
         }
       }
-      break;   
+      break;
+      
+      
     
     case KEY_RST: //复位组合键M+3
-   
-      memset(&Buffer[0], 0, sizeof(Buffer));
-      //复位之前有用数据保存操作
-      Buffer[33] = INITIALIZED;
-      Buffer[35] = RELEASE;
-      Buffer[36] = Unit;
-      Buffer[34] = TIMEVAL;
-      memcpy(&Buffer[37], &BaseHeight, sizeof(BaseHeight));
-      memcpy(&Buffer[41],&DiffHall, 2);
-      memcpy(&Buffer[43], &MaxHeight, sizeof(MaxHeight));
-      Buffer[47] = Speed;
-      Buffer[48] = Sensitivity;
-      memcpy(&Buffer[49], &MinColumnHeight, sizeof(MinColumnHeight));
-      memcpy(&Buffer[53], &MaxColumnHeight, sizeof(MaxColumnHeight));
-      
-      Buffer[61] = Balance_Data.TwoMotorRunFlag;
-      
-      memcpy(&Buffer[64],&AccDataBag.Y_Offset,sizeof(AccDataBag.Y_Offset));
-      memcpy(&Buffer[66],&AccDataBag.Y_OffsetFlag,sizeof(AccDataBag.Y_OffsetFlag));
-      memcpy(&Buffer[73],&AccDataBag.Y_Offset_Spec,sizeof(AccDataBag.Y_Offset_Spec));
-                     
-       
-      memcpy(&Buffer[75],&AccDataBag.Y_OffsetFlag_Spec,sizeof(AccDataBag.Y_OffsetFlag_Spec)); 
-      EnableHPSlopeFilter();
-     //Y_Off_EN_Fleg=0;  
-     // DisableHPSlopeFilter(); 
-     // Clear_AccDateBuffer();
-      EEPROM_Write();
-      
-    
-    
-    
-    
       /*  复位操作老程序
       memset(&Buffer[0], 0, sizeof(Buffer));
       Buffer[33] = INITIALIZED;
@@ -1662,14 +1946,14 @@ void KeyRespond(u16 value)
       break;
     
     case KEY_VER: //版本显示 
-        if((Adjust_State==0))   
+        if((Adjust_State==0))
         {
-         if( DisplayMode != TestMode) DisMode=DisplayMode; 
+            
          if(VER_Cnt<2000)  
          {
          Dis_Char[0] =Data_Char[8];
          Dis_Char[1] =Data_Char[0];
-         Dis_Char[2] =Data_Char[9];
+         Dis_Char[2] =Data_Char[6];
          CombinationKey = 2;
          DisplayMode = TestMode;
          }
@@ -1677,20 +1961,22 @@ void KeyRespond(u16 value)
          {
          Dis_Char[0] =Char_L;
          Dis_Char[1] =Data_Char[1]|Char_Dot;
-         Dis_Char[2] =Data_Char[3];
+         Dis_Char[2] =Data_Char[0];
          CombinationKey = 2;
          DisplayMode = TestMode;
          
          }
          else if(VER_Cnt<6000)
          {
-          CombinationKey=6;
+         CombinationKey=6;
+         
+         
          }
          else 
          {
-         //DisplayMode=HeightMode;
-         CombinationKey = 0;
-         DisplayMode = DisMode;
+         DisplayMode=HeightMode;
+          CombinationKey=0;
+      
          }
         }
          
@@ -1773,20 +2059,19 @@ void KeyRespond(u16 value)
            M2Dir = 0;
          }
       }
-      else if((sensKeyFlag==1)&&(Adjust_State == 0))
+      else if((sensKeyFlag==1)&&(Adjust_State==0))
       {
          if(sensTimer>5050)
          {
             if(LSM6DSLFlag==1)
             {
-               if(Sensitivity > 1)
+               if(Sensitivity>1)
                {
                  Sensitivity--;
                }
                else
                {
-                 //Sensitivity = SENS;
-                 Sensitivity = 3;
+                 Sensitivity=SENS;
                }
                
                if((ErrCode==Err_LSM6DSL)&&(Sensitivity==1))
@@ -1798,11 +2083,11 @@ void KeyRespond(u16 value)
                Buffer[48] = Sensitivity;
 
                EEPROM_Write();
-              // DisplayRemind=OFF;
+               
                Dis_Char[0]=Char_R;
                Dis_Char[1]=Char_;
                Dis_Char[2]=Data_Char[Sensitivity];
-               DisplayMode = Test_Sens;
+               DisplayMode = TestMode;
            }
            sensKeyFlag=2;
          }
@@ -1847,10 +2132,7 @@ void KeyRespond(u16 value)
       if(RunCntFlag == 1)
       {
         RunCntFlag = 2;
-        /*
-        if(Adjust_State == 2)
-            Balance_Data_Refresh();
-        */
+        if(Adjust_State==2)Balance_Data_Refresh();
         RunCnt = 0;
       }
       else if(RunCntFlag == 0)  //从有键按下到无按键状态后再延时100ms进入此操作
@@ -1864,68 +2146,113 @@ void KeyRespond(u16 value)
       
       if(Menu1Flag == 1)//已经进入菜单模式
       {
-        Menu2Num=2;        
+        if(MenuKeyUp == 1)//向上按键处理
+        {
+            Menu2Num++;
+            MenuKeyUp = 0;
+            if(Menu2Num > Menu2_Max - 1)
+                Menu2Num = 0;
+        }
+        else if(MenuKeyDown==1)
+        {
+            
+            MenuKeyDown = 0;
+            if(Menu2Num<= 0)
+               Menu2Num = Menu2_Max;
+               Menu2Num--;
+        }
+        
+        /*
+        if(Menu2Flag == 1)//已经进入二级菜单
+        {
+          if(MenuKeyDown == 1)//向下按键处理
+          {
+            MenuKeyDown  = 0;
+            switch(Menu2Num)
+            {
+               case 0:
+                 if(Menu2_0)
+                 {
+                   //Menu2_0 = 0;
+                   //TapControlFlag = 0;
+                   TapControlFlag = 1;
+                 }
+                 else
+                 {
+                    //Menu2_0 = 1;
+                    //TapControlFlag = 1;
+                   TapControlFlag = 0;
+                 }
+                 
+               break;
+               
+              default:
+              break;
+            }
+          }
+        }
+        */
       } 
       else if((Menu1Flag == 2))
       {
-        if(Menu2Num == 2) 
+        if(Menu2Num==2) 
         {
-          if(MenuKeyUp == 1)    //向上按键处理
-          {
-            Menu1Num++;         //该参数用来进行 ACT,dOT,CHE显示之间的切换        
+         if(MenuKeyUp == 1)//向上按键处理
+        {
+            Menu1Num++;
             MenuKeyUp = 0;
             if(Menu1Num > Menu1_Max - 1)
-            {
                 Menu1Num = 0;
-            }
-          }
-          else if(MenuKeyDown==1)
-          {
+        }
+        else if(MenuKeyDown==1)
+        {
+            
             MenuKeyDown = 0;
             if(Menu1Num<= 0)
-            {
                 Menu1Num = Menu1_Max;
-            }
               Menu1Num--;
-          }
+        }
+        
+       
         }
         else if(Menu2Num==1)
         {
-          if(MenuKeyUp == 1)//向上按键处理
-          {
+         if(MenuKeyUp == 1)//向上按键处理
+        {
             Menu3Num++;
             MenuKeyUp = 0;
             if(Menu3Num > Menu3_Max - 1)
-            {
                 Menu3Num = 0;
-            }
-          }
-          else if(MenuKeyDown==1)
-          {
+        }
+        else if(MenuKeyDown==1)
+        {
+            
             MenuKeyDown = 0;
             if(Menu3Num<= 0)
-            {
                 Menu3Num = Menu3_Max;
-            }
               Menu3Num--;
-          }  
+        }  
+            
+            
+     
         }
+      
+      
       }
       else if(Menu1Flag == 3)
       {
-        if(Menu2Num==2) 
+      if(Menu2Num==2) 
         {
            if(MenuKeyM==1)
         {
-        MenuKeyM=0;  
-        switch(Menu1Num) 
-        { 
-          case 0:
+          MenuKeyM=0;  
+          switch(Menu1Num) 
+           { 
+            case 0:
             Balance_EN=1;
-            //Check_EN=0;
+            Check_EN=0;
             Rst_EN=0;
             break;
-            
             case 1:
             Check_EN=1;
             Balance_EN=0;
@@ -1935,62 +2262,77 @@ void KeyRespond(u16 value)
                 Y_Off_EN_Fleg=1;
                 DisableHPSlopeFilter();
                 Clear_AccDateBuffer();
-            }      
+            }
+            //else Y_Off_EN_Fleg=0; 
             break;
-            
             case 2:
             if(Adjust_State==0)
             {
-              Adjust_State=1;
-              DisplayMode=FLash_HeightMode;
-              Menu1Flag=0;
+            Adjust_State=1;
+            DisplayMode=FLash_HeightMode;
+            Menu1Flag=0;
             }
+            
             break;
-            
-          default:break;
            }  
-          }  
+        
         }
-        else if(Menu2Num==1)
+          
+            
+            
+        }
+      else if(Menu2Num==1)
+      {
+      if(Menu3Num==0)
+      {
+         if(MenuKeyM==1)
         {
-          if(Menu3Num == 0)
-          {
-            if(MenuKeyM == 1)
-            {
-              MenuKeyM = 0;  
+          MenuKeyM=0;  
             
-              if(TapControlFlag==0)
-              {
-                TapControlFlag=1;
-              }
-            }
-          }
-          else if(Menu3Num==1)
-          {
-            if(MenuKeyM==1)
-            {
-              MenuKeyM=0;  
-            
-              if(TapControlFlag==1)
-              {
-                TapControlFlag=0;
-              }
-            }
-          } 
+        if(TapControlFlag==0)
+        {
+        TapControlFlag=1;
+        
+        }
+       // else TapControlFlag=0;
         }
       }
-      if( (Adjust_State==2) && ( DisplayMode == FLash_HeightMode))
-      {    
-        if(MenuKeyM == 1)
+      else if(Menu3Num==1)
+      {
+        if(MenuKeyM==1)
         {
-          MenuKeyM=0;      
+          MenuKeyM=0;  
+            
+        if(TapControlFlag==1)
+        {
+        TapControlFlag=0;
+        
+        }
+       // else TapControlFlag=0;
+        }
+      
+      
+      } 
+      }
+      
+      
+      }
+       if( (Adjust_State==2)&&( DisplayMode==FLash_HeightMode))
+          {
+              
+         if(MenuKeyM==1)
+        {
+          MenuKeyM=0;   
+              
           Adjust_State=0;
-          Balance_Data_Refresh();//记录两电机当前HALL值
-          DisplayMode = HeightMode;
-          DisplayRemind=ON; 
-          HealthModeReset() ; 
-        } 
-      }
+          Balance_Data_Refresh();
+          DisplayMode=HeightMode;
+            
+        }
+            
+            
+          }
+   
       if(InvalidFlag == 0)              //从键放开开始，延时500ms后仍无键按下，则进入上次按下的键的有关参数的清零操作
       {
         LastKey = 0;                    //延时减速之后清除上次的按键值
@@ -1998,13 +2340,9 @@ void KeyRespond(u16 value)
         {
            sensKeyFlag = 0;
            if(SysState == RESET)
-           {
               DisplayMode = ErrorMode;
-           }
            else if(SysState == NORMAL)
-           {
               DisplayMode = HeightMode;
-           }
         }
       }
       else if(InvalidFlag == 1)         //按键按下再松手之后开始计时
@@ -2013,10 +2351,8 @@ void KeyRespond(u16 value)
         InvalidCnt = 0;
       }
       
-      if((SysCmd==CmdNull)&&(AntiCollisionState!=0)) 
-      {
+      if((SysCmd==CmdNull)&&(AntiCollisionState!=0))       
         AntiCollisionState = 0;
-      }
       
       RSTFlag = 0;
       RSTCnt = 0;
@@ -2437,62 +2773,112 @@ void KeyRespondTest(u16 value)
 }
 
 
+
+u8 GetM1BeforeRunState()
+{
+  return M1BeforeRunState;
+}
+
+void SetM1BeforeRunState(u8 state)
+{
+  M1BeforeRunState = state;
+}
+
+u8 GetM2BeforeRunState()
+{
+  return M2BeforeRunState;
+}
+
+void SetM2BeforeRunState(u8 state)
+{
+  M2BeforeRunState = state;
+}
+
+
+void SetCmdToPresetState(u8 state)
+{
+  CmdToPresetState = state;
+}
+
+u8 GetCmdToPresetState()
+{
+  return CmdToPresetState;
+}
+
+
 void Balance_Data_Refresh()
 {
-  Balance_Data.TwoMotorOffsetHall = M1State.HallNow - M2State.HallNow;            //得到两电机间的HALL偏差值
+
+           Balance_Data.TwoMotorOffsetHall = M1State.HallNow - M2State.HallNow;            //得到两电机间的HALL偏差值
         
-  memcpy(&Buffer[62],&Balance_Data.TwoMotorOffsetHall,sizeof(Balance_Data.TwoMotorOffsetHall));     //Buffer[62]，Buffer[63]存储因地形自适应而产生的两电机HALL差值
+            memcpy(&Buffer[62],&Balance_Data.TwoMotorOffsetHall,sizeof(Balance_Data.TwoMotorOffsetHall));     //Buffer[62]，Buffer[63]存储因地形自适应而产生的两电机HALL差值
         
-  memcpy(&Buffer[2],&M1State.HallNow,sizeof(M1State.HallNow));        //存储M1 HALL当前值
-  memcpy(&Buffer[4],&M2State.HallNow,sizeof(M2State.HallNow));        //存储M2 HALL当前值
+            memcpy(&Buffer[2],&M1State.HallNow,sizeof(M1State.HallNow));        //存储M1 HALL当前值
+            memcpy(&Buffer[4],&M2State.HallNow,sizeof(M2State.HallNow));        //存储M2 HALL当前值
             
-  EEPROM_Write();
+            EEPROM_Write();
         
-  if (Balance_Data.TwoMotorOffsetHall >= 0)             //M1电机比M2电机高
-  {
-    M1State.RelativeLimitUp = M1State.LimitUp;
-    M1State.RelativeLimitDown = M1State.LimitDown + Balance_Data.TwoMotorOffsetHall;
+            if (Balance_Data.TwoMotorOffsetHall >= 0)             //M1电机比M2电机高
+            {
+              M1State.RelativeLimitUp = M1State.LimitUp;
+              M1State.RelativeLimitDown = M1State.LimitDown + Balance_Data.TwoMotorOffsetHall;
           
-    M2State.RelativeLimitUp = M2State.LimitUp - Balance_Data.TwoMotorOffsetHall;
-    M2State.RelativeLimitDown = M2State.LimitDown;
-  }
-  else  //Balance_Data.TwoMotorOffsetHall < 0           //M1电机比M2电机低
-  {
-    M1State.RelativeLimitUp = M1State.LimitUp + Balance_Data.TwoMotorOffsetHall;        //减少M1最高位置设定值
-    M1State.RelativeLimitDown = M1State.LimitDown;
+              M2State.RelativeLimitUp = M2State.LimitUp - Balance_Data.TwoMotorOffsetHall;
+              M2State.RelativeLimitDown = M2State.LimitDown;
+            }
+            else  //Balance_Data.TwoMotorOffsetHall < 0           //M1电机比M2电机低
+            {
+              M1State.RelativeLimitUp = M1State.LimitUp + Balance_Data.TwoMotorOffsetHall;        //减少M1最高位置设定值
+              M1State.RelativeLimitDown = M1State.LimitDown;
             
-    M2State.RelativeLimitUp = M2State.LimitUp;
-    M2State.RelativeLimitDown = M2State.LimitDown - Balance_Data.TwoMotorOffsetHall;    //升高M2最低位置设定值
-  } 
-  
-  AnglePID.LastDiffValur = 0;
-  AnglePID.PrevDiffValur = 0;    
-  AnglePID.OutPut = 0;
+              M2State.RelativeLimitUp = M2State.LimitUp;
+              M2State.RelativeLimitDown = M2State.LimitDown - Balance_Data.TwoMotorOffsetHall;    //升高M2最低位置设定值
+            }
+
+            EnableHPSlopeFilter();
             
-  M1PID.SetSpeed = 0;
-  M1PID.SetSpeed = 0;
             
-  M1PID.CurrSpeed = 0;
-  M2PID.CurrSpeed = 0;
+            AnglePID.LastDiffValur = 0;
+            AnglePID.PrevDiffValur = 0;    
+            AnglePID.OutPut = 0;
             
-  Balance_Data.DecideMotorRunState = 0;
+            M1PID.SetSpeed = 0;
+            M1PID.SetSpeed = 0;
+            
+            M1PID.CurrSpeed = 0;
+            M2PID.CurrSpeed = 0;
+            
+            Balance_Data.DecideMotorRunState = 0;
                       
-  Balance_Data.BalanceAdjuseState = 0;
+            //Balance_Data.BuzzerOnTimerCnt = 0;
             
-  Balance_Data.HallCheckState = 0;
+            //BuzzerOnTimerCnt = 0;
+            //BuzzerState = ON;
+           // BuzzerWorkMode = 1;
+            Balance_Data.BalanceAdjuseState = 0;
             
-  Balance_Data.Acc_yTemp = 0;   
+            Balance_Data.HallCheckState = 0;
             
-  M1PID.LastDev = 0;
-  M1PID.PrevDev = 0;
-  M1PID.SyncDev = 0;
+            Balance_Data.Acc_yTemp = 0;   
             
-  M2PID.LastDev = 0;
-  M2PID.PrevDev = 0;
-  M2PID.SyncDev = 0;
+            M1PID.LastDev = 0;
+            M1PID.PrevDev = 0;
+            M1PID.SyncDev = 0;
             
-  M2Flag = 0;
-  M1Flag = 0;
+            M2PID.LastDev = 0;
+            M2PID.PrevDev = 0;
+            M2PID.SyncDev = 0;
             
-  Buffer[32] = SaveIndex;
+            M2Flag = 0;
+            M1Flag = 0;
+            
+            //Release = 1;
+            
+            //SaveIndex = 0;       //存储位置的标志位清0
+            
+            Buffer[32] = SaveIndex;
+           // DisplayMode = HeightMode;
+            
+
+
 }

@@ -49,36 +49,33 @@ void Uart_Config(void)
 ************************************************************************************************************/
 void PackageSendData(u8* data, u8* len)
 {
-  static u8 temp[32];
-  u8 lenTemp=0;
-  u16 crc16;
-  temp[0]= FrameHeader;
-  temp[1]=*len+3;
+  u8 temp[64],temp1[64],i,j = 0;
+  u16 crc;
+  
+  memset(&temp[0], 0, sizeof(temp));
+  memset(&temp1[0], 0, sizeof(temp1));
   memcpy(&temp[2], data, *len); //复制传输数据
-  crc16 = CRC16MODBUS(&temp[1], *len+1); //计算CRC16校验值
-  memcpy(&temp[*len+2], &crc16, 2); //复制校验值
-  temp[*len+4] = FrameEnd; //加入帧尾
-  lenTemp=1;
-  memset(data, 0, sizeof(data));
-  data[0]=FrameHeader;
-  for(u8 i=1; i < *len+4;i++ )
+  temp[0] = FrameHeader; //加入帧头
+  temp[1] = *len+3; //加入长度值
+  crc = CRC16MODBUS(&temp[1], *len+1); //计算CRC16校验值
+  memcpy(&temp[*len+2], &crc, 2); //复制校验值
+  for(i=3; i < *len+3+j; )
   {
     if((temp[i]==FrameHeader)||(temp[i]==FrameEnd))//如果传输的数据中有和帧头或帧尾一样的数据则插入转义符
     {
-      data[lenTemp++]=0x5c;
-      data[lenTemp++]=temp[i];
-      
+      memset(&temp1[0], 0, sizeof(temp1));
+      memcpy(&temp1[0], &temp[i], *len+3+j-i);
+      temp[i] = 0x5C; //加入转义符 ‘\'
+      memcpy(&temp[i+1], &temp1[0], *len+3+j-i);
+      i = i+2;
+      j++;
     }
     else
-    {
-    data[lenTemp++]=temp[i];
-    }
-      
+      i++;
   }
-  
-  data[lenTemp]= FrameEnd;
-  *len=lenTemp+1;
-  
+  temp[*len+4+j] = FrameEnd;
+  memcpy(data, &temp[0], *len+5+j);
+  *len = *len+5+j;
 }
 
 /***********************************************************************************************************

@@ -31,14 +31,13 @@
 #define  M3  0x42
 #define  M4  0x43
 
-//#define  NULL      0
+#define  NULL      0
 #define  BEGIN     1
 #define  CONFIRM   2
 #define  END       3
 
 extern u8 Buffer[128];
 extern u8 SaveIndex;
-extern u8 Balance_ON;
 void EEPROM_Init(void);
 void EEPROM_Write(void);
 void SysDataRead(void);

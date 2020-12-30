@@ -4,6 +4,7 @@
 
 #define MAX_HEIGHT_DIFF         10  //30CM
 
+#define MAX_HALL_DIFF           6235//(MAX_HEIGHT_DIFF * 155.8742) 
 
 typedef struct
 {

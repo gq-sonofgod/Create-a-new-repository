@@ -55,8 +55,7 @@ void HealthModeTimeProc(void)
       if(T30sCnt >= 10000)
       {
         T30sCnt = 0;
-        HealthModeReset();
-        /*if(SecAlarmFlag != 2)
+        if(SecAlarmFlag != 2)
           SecAlarmFlag = 1;
         else if(SecAlarmFlag == 2)
         {
@@ -71,7 +70,7 @@ void HealthModeTimeProc(void)
           MinValue = 0;
         }
         AlarmFlag = 0;
-        BuzzerState=OFF;*/
+        BuzzerState=OFF;
       }
     }
     if((T45MinuteCnt == 0)&&(SecAlarmFlag!=1))
@@ -81,7 +80,7 @@ void HealthModeTimeProc(void)
       AlarmFlag = 1;
     }   
   }
-  if(((HealthMode == 1)||(HealthMode == 2)||(HealthMode == 3)||(HealthMode == 6))&&(DisplayRemind==ON)&&( sensKeyFlag!=2))
+  if((HealthMode == 1)||(HealthMode == 2)||(HealthMode == 3)||(HealthMode == 6))
   {
     if((M1Cmd == CmdNull)&&(M2Cmd == CmdNull))
     {

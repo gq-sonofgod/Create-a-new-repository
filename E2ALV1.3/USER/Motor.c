@@ -190,6 +190,8 @@ void M1Control(u8 cmd)
                         M1_PWM_OFF;
                         M1Cmd = CmdStop; //电机1进入停止状态 
                         
+                        //SetM1BeforeRunState(3);
+                        
                     }
                     else
                     {
@@ -277,7 +279,143 @@ void M1Control(u8 cmd)
         break;
         
         //升降平台没有此功能  
-      case CmdToPreseting:      //运行到设定的位置      
+      case CmdToPreseting:      //运行到设定的位置
+        /*   //运行到指定位置操作时，进行平衡度检测操作
+        if (GetM1BeforeRunState() == 1)
+        {
+            if(GetAccFullState() == 1)      //加速度值已获得
+            {
+                if ((GetAcc_y() < 200) && (GetAcc_y() > -200))        //目前桌子处于平衡状态
+                {
+                    SetM1BeforeRunState(2);   
+                    SetM2BeforeRunState(2);
+                    
+                    HealthModeReset();
+              
+                    SetTIM1_PWMDuty(1,1350-BASEDUTYDOWN);
+                    SetTIM1_PWMDuty(2,1350-BASEDUTYDOWN);
+                    PID_Set(Speed,BASEDUTYDOWN);
+                    
+                }
+                else
+                {
+                    SetM1BeforeRunState(0);
+                    SetM2BeforeRunState(0);
+                    EnableHPSlopeFilter();
+                    
+                    M1Up(OFF);
+                    M1Down(OFF);
+                    M2Up(OFF);
+                    M2Down(OFF);
+                    M1_PWM_OFF;
+                    M1Dir = STOP;
+                    M1Cmd = CmdStop;//电机1进入停止状态           
+                    M2_PWM_OFF;
+                    M2Dir = STOP;
+                    M2Cmd = CmdStop;
+                    
+                    BuzzerWorkMode = 3;
+                    BuzzerState = ON;
+                    BuzzerOnTimerCnt = 0;
+                }
+            }
+        }
+        if (GetM1BeforeRunState() == 2)  
+        {
+            if((M1State.Record[Position] > (M1State.HallNow+10))&&(M1State.HallNow < M1State.LimitUp))//设定位置在当前位置上方则向上运行
+            {
+                if(M1State.Record[Position] + M2State.Record[Position] > M1State.HallNow + M2State.HallNow + 20)
+                {
+                    M1Dir = UP;
+                    DeleteSavedHeight();        //删除存储的当前高度数据
+                }
+            }
+            else if(((M1State.Record[Position]+10)< M1State.HallNow)&&(M1State.HallNow > M1State.LimitDown))//设定位置在当前位置下方则向下运行
+            {
+                if(M1State.Record[Position]+M2State.Record[Position]+20<M1State.HallNow+M2State.HallNow)
+                {
+                    M1Dir = DOWN;
+                    DeleteSavedHeight();        //删除存储的当前高度数据
+                }
+            }
+            if(M1Dir == UP)
+            {
+                if((M1State.Record[Position] - M1State.HallNow) < 500)//快到达设定位置时减速运行
+                {
+                    M1PID.SetSpeed = Speed/2;
+                }
+                if((M1State.HallNow + M2State.HallNow + 10) >= (M1State.Record[Position] + M2State.Record[Position]))//到达指定位置后停止运行
+                {
+                    M1Up(OFF);
+                    M1Down(OFF);
+                    M2Up(OFF);
+                    M2Down(OFF);
+                    M1_PWM_OFF;
+                    M1Dir = STOP;
+                    M1Cmd = CmdStop;//电机1进入停止状态           
+                    M2_PWM_OFF;
+                    M2Dir = STOP;
+                    M2Cmd = CmdStop;
+                    
+                    SetM1BeforeRunState(3);
+                    SetM2BeforeRunState(3);
+                    
+                }
+                else
+                {
+                    M1Down(OFF);
+                    M1Up(ON);
+                }
+            }
+            else if(M1Dir == DOWN)
+            {
+                if(M1State.HallNow - M1State.Record[Position] < 500)//快到达设定位置时减速运行
+                {
+                    M1PID.SetSpeed = Speed/2;
+                }
+                if((M1State.Record[Position]+M2State.Record[Position]) >= (M1State.HallNow+M2State.HallNow+5))//到达指定位置后停止运行
+                {
+                    M1Up(OFF);
+                    M1Down(OFF);
+                    M2Up(OFF);
+                    M2Down(OFF);
+                    M1_PWM_OFF;
+                    M1Dir = STOP;
+                    M1Cmd = CmdStop;
+                    M2_PWM_OFF;
+                    M2Dir = STOP;
+                    M2Cmd = CmdStop;
+                    
+                    SetM1BeforeRunState(3);
+                    SetM2BeforeRunState(3);
+                    
+                }
+                else
+                {
+                    M1Up(OFF);
+                    M1Down(ON);
+                }
+            }
+            else 
+            {
+                M1Up(OFF);
+                M1Down(OFF);
+                M1_PWM_OFF;
+                M1Cmd = CmdStop;    
+                
+                SetM1BeforeRunState(3);
+                SetM2BeforeRunState(3);
+            }
+        }
+        else if (GetM1BeforeRunState() == 3)
+        {
+          M1Up(OFF);
+          M1Down(OFF);
+          M1_PWM_OFF;
+          M1Cmd = CmdStop;
+        }
+        */
+        
          if((M1State.Record[Position] > (M1State.HallNow+10))&&(M1State.HallNow < M1State.LimitUp))//设定位置在当前位置上方则向上运行
          {
              if(M1State.Record[Position] + M2State.Record[Position] > M1State.HallNow + M2State.HallNow + 20)
@@ -311,7 +449,11 @@ void M1Control(u8 cmd)
                   M1Cmd = CmdStop;//电机1进入停止状态           
                   M2_PWM_OFF;
                   M2Dir = STOP;
-                  M2Cmd = CmdStop;                          
+                  M2Cmd = CmdStop;
+                    
+                  //SetM1BeforeRunState(3);
+                  //SetM2BeforeRunState(3);
+                    
                 }
                 else
                 {
@@ -338,6 +480,9 @@ void M1Control(u8 cmd)
                     M2Dir = STOP;
                     M2Cmd = CmdStop;
                     
+                    //SetM1BeforeRunState(3);
+                    //SetM2BeforeRunState(3);
+                    
                 }
                 else
                 {
@@ -351,6 +496,9 @@ void M1Control(u8 cmd)
                 M1Down(OFF);
                 M1_PWM_OFF;
                 M1Cmd = CmdStop;    
+                
+                //SetM1BeforeRunState(3);
+                //SetM2BeforeRunState(3);
             }
         
         break;
@@ -649,20 +797,6 @@ void M1Control(u8 cmd)
               M1Cmd = CmdDownHold; //保持当前状态，等待其他电机复位到结构最底端
             }
           }
-          else if(ADCValue.M1Current>450)
-          {
-              M1Detect = 0;
-              M1CurrBase = 0;
-              M1Down(OFF);
-              M1Up(OFF);
-              M1_PWM_OFF;
-              M1State.HallNow = BASEHALL;
-              M1State.HallLast = BASEHALL;
-              M1PID_Set(Speed,BASEDUTYDOWN);
-              M1Cmd = CmdDownHold; //保持当前状态，等待其他电机复位到结构最底端
-          
-          
-          }
           else
           {
             M1CurrBase = (u16)ADCValue.M1Current;
@@ -746,6 +880,7 @@ void M1Control(u8 cmd)
           
           memcpy(&Buffer[8],&M1State.LimitDown,sizeof(M1State.LimitDown));      //存入M1State.LimitDown值
           memcpy(&Buffer[10],&M2State.LimitDown,sizeof(M2State.LimitDown));     //存入M2State.LimitDown值
+          //EEPROM_Write();
           
           DisplayMode = HeightMode;
           Release = 0;
@@ -766,16 +901,9 @@ void M1Control(u8 cmd)
           
             EnableHPSlopeFilter();
           }
-          HealthMode=0;
-          Balance_ON=0;
-          Buffer[76]=Balance_ON;
-          
-          //
-          SaveIndex = 0;
-          Buffer[32] = SaveIndex;
           
           EEPROM_Write();
-           
+          
           SysState = NORMAL;            //系统进入正常运行状态
         }
         break;
@@ -1006,6 +1134,110 @@ void M2Control(u8 cmd)
         
       //运行到指定高度指令 
       case CmdToPreseting: 
+        //{
+            /*
+            if (GetM2BeforeRunState() == 2) 
+            {
+          
+            if((M2State.Record[Position] > (M2State.HallNow + 10)) && (M2State.HallNow < M2State.LimitUp))//设定位置在当前位置上方
+            {
+                if((M1State.Record[Position] + M2State.Record[Position]) > (M1State.HallNow + M2State.HallNow + 20))
+                {
+                    M2Dir = UP;
+                }
+            }
+            else if(((M2State.Record[Position] + 10) < M2State.HallNow) && (M2State.HallNow > M2State.LimitDown))//设定位置在当前位置下方
+            { 
+                if((M1State.Record[Position] + M2State.Record[Position] + 20) < (M1State.HallNow + M2State.HallNow))
+                {
+                    M2Dir = DOWN;
+                }
+            }
+            if(M2Dir == UP)
+            {
+                if((M2State.Record[Position] - M2State.HallNow) < 500)//快到达设定位置时减速运行
+                {
+                    M2PID.SetSpeed = Speed/2;
+                }
+                if((M1State.HallNow + M2State.HallNow + 10) >= (M1State.Record[Position] + M2State.Record[Position]))//到达设定位置后停止运行
+                {
+                    M2Up(OFF);
+                    M2Down(OFF);
+                    M1Up(OFF);
+                    M1Down(OFF);
+                    M2_PWM_OFF;
+                    M2Dir = STOP;
+                    M2Cmd = CmdStop;
+                    M1_PWM_OFF;
+                    M1Dir = STOP;
+                    M1Cmd = CmdStop;  
+                    
+                    SetM2BeforeRunState(3);
+                    SetM2BeforeRunState(3);
+                    //EnableHPSlopeFilter();
+                }
+                else
+                { 
+                    M2Down(OFF);
+                    M2Up(ON);
+                }
+            }
+            else if(M2Dir == DOWN)
+            {
+                if((M2State.HallNow - M2State.Record[Position]) < 500)//快到达设定位置时减速运行
+                {
+                    M2PID.SetSpeed = Speed/2;
+                }
+                if((M2State.Record[Position] + M1State.Record[Position]) >= (M2State.HallNow + M1State.HallNow + 5))//到达设定位置后停止运行
+                {
+                    M2Up(OFF);
+                    M2Down(OFF);
+                    M1Up(OFF);
+                    M1Down(OFF);
+                    M2_PWM_OFF;
+                    M2Dir = STOP;
+                    M2Cmd = CmdStop;
+                    M1_PWM_OFF;
+                    M1Dir = STOP;
+                    M1Cmd = CmdStop;
+                    
+                    SetM2BeforeRunState(3);
+                    SetM2BeforeRunState(3);
+                    
+                    //SetCmdToPresetState(0);
+                    //EnableHPSlopeFilter();
+                    
+                    //SetM1BeforeRunState(3);
+                    //SetM2BeforeRunState(3);
+                }
+                else
+                {
+                    M2Up(OFF);
+                    M2Down(ON);
+                }
+            } 
+            else
+            { 
+                M2Up(OFF);
+                M2Down(OFF);
+                M2_PWM_OFF;
+                M2Cmd = CmdStop;
+                
+                SetM2BeforeRunState(3);
+                SetM1BeforeRunState(3);
+            }
+          }
+          else if (GetM2BeforeRunState() == 3)
+          {
+                M2Up(OFF);
+                M2Down(OFF);
+                M2_PWM_OFF;
+                M2Cmd = CmdStop;
+          }
+        }
+        */
+          
+          
         if((M2State.Record[Position] > (M2State.HallNow + 10)) && (M2State.HallNow < M2State.LimitUp))//设定位置在当前位置上方
         {
              if((M1State.Record[Position] + M2State.Record[Position]) > (M1State.HallNow + M2State.HallNow + 20))
@@ -1037,7 +1269,11 @@ void M2Control(u8 cmd)
                   M2Cmd = CmdStop;
                   M1_PWM_OFF;
                   M1Dir = STOP;
-                  M1Cmd = CmdStop;                 
+                  M1Cmd = CmdStop;  
+                    
+                  //SetM2BeforeRunState(3);
+                  //SetM2BeforeRunState(3);
+                  //EnableHPSlopeFilter();
                }
                else
                { 
@@ -1080,6 +1316,9 @@ void M2Control(u8 cmd)
                 M2Down(OFF);
                 M2_PWM_OFF;
                 M2Cmd = CmdStop;
+                
+                //SetM2BeforeRunState(3);
+                //SetM1BeforeRunState(3);
             }
         break;
         
@@ -1359,20 +1598,6 @@ void M2Control(u8 cmd)
               M2Cmd = CmdDownHold;
             }
           }
-          else if(ADCValue.M2Current>450)
-          {
-              M2Detect = 0;
-              M2CurrBase = 0;
-              M2Down(OFF);
-              M2Up(OFF); 
-              M2_PWM_OFF;
-              M2PID_Set(Speed,BASEDUTYDOWN);
-              M2State.HallNow = BASEHALL;
-              M2State.HallLast = BASEHALL;
-              M2Cmd = CmdDownHold;
-          
-          
-          }
           else
           {
             M2CurrBase = (u16)ADCValue.M2Current;
@@ -1435,7 +1660,19 @@ void MotorControl(void)
        motorStartTimer = 500;
     }
   }
+  /*
+  if ((GetM2BeforeRunState() == 3) && (GetM1BeforeRunState() == 3))
+  {
+    SetM2BeforeRunState(0);
+    SetM1BeforeRunState(0);
+    
+    M2_PWM_OFF;
+    M1_PWM_OFF;
+    EnableHPSlopeFilter();
+  }
+  */
 }
+
 
 /***********************************************************************************************************
 * 函数名称: LimitPower()
@@ -1447,22 +1684,19 @@ void LimitPower(void)
 {
   if((SysCmd == CmdStop)||(SysCmd == CmdNull))
   {
-      
     T2sCnt1 = 0;
     LimitPowerFlag = 0;
     LimitPowerState = 0;
   }
   if(LimitPowerFlag == 1) //电机运行500ms后，通过判断电机输出电流和电机当前速度，使电机进入LimitPowerFlag==2的运行状态
   {
-    //if((ADCValue.M1Current+ADCValue.M2Current)>650)
-    if((ADCValue.M1Current+ADCValue.M2Current)>500)     //约90kg进入恒功率模式
-    {  
+    if((ADCValue.M1Current+ADCValue.M2Current)>890)
+    {
       if((M1PID.CurrSpeed >= 5)&&(M2PID.CurrSpeed >= 5))
       {
-        M1PID.SetSpeed = (M1PID.CurrSpeed+M2PID.CurrSpeed)/2 + 3;
+        M1PID.SetSpeed = (M1PID.CurrSpeed+M2PID.CurrSpeed)/2+3;
         M2PID.SetSpeed = M1PID.SetSpeed;
       }
-      
       LimitPowerFlag = 2;
       T500msCnt = 0;
       LimitPowerState = 1;
@@ -1475,30 +1709,23 @@ void LimitPower(void)
   }
   else if(LimitPowerFlag == 2)
   {
-    //if((ADCValue.M1Current+ADCValue.M2Current)>650)
-    if((ADCValue.M1Current+ADCValue.M2Current)>500)//约90kg进入恒功率模式
+    if((ADCValue.M1Current+ADCValue.M2Current)>890)
     {
-      //if(T500msCnt == 600)
       if(T500msCnt == 600)
       {
-          if(((M1PID.CurrSpeed + M2PID.CurrSpeed)/2) > 40)      //50对应22mm/s
+        if((M1PID.CurrSpeed >=M1PID.SetSpeed)&&(M2PID.CurrSpeed>=M2PID.SetSpeed))
+        {
+          if(((M1PID.CurrSpeed + M2PID.CurrSpeed)/2) > 9)
           {
             M1PID.SetSpeed = (M1PID.CurrSpeed + M2PID.CurrSpeed)/2 - 3;
             M2PID.SetSpeed = M1PID.SetSpeed;
           }
-          else if(((M1PID.CurrSpeed + M2PID.CurrSpeed)/2) < 40)
-          {
-            M1PID.SetSpeed = (M1PID.CurrSpeed + M2PID.CurrSpeed)/2 + 3;
-            M2PID.SetSpeed = M1PID.SetSpeed;
-          }
-        
+        }
         T500msCnt = 0;
       }            
     }
-    //else if((ADCValue.M1Current + ADCValue.M2Current) < 600)
-      else if((ADCValue.M1Current + ADCValue.M2Current) < 450)
+    else if((ADCValue.M1Current + ADCValue.M2Current) < 810)
     {
-      //if(T500msCnt == 600)
       if(T500msCnt == 600)
       {
         if((((M1Cmd==CmdUp)&&(M1State.LimitUp > (M1State.HallNow+700)))||((M1Cmd==CmdToPreseting)&&(M1Dir==UP)&&((M1State.Record[Position] - M1State.HallNow) > 1500)))
@@ -1515,13 +1742,12 @@ void LimitPower(void)
     }
     else 
     {
-      //if(T500msCnt == 600)
       if(T500msCnt == 600)
       {
         if((((M1Cmd==CmdUp)&&(M1State.LimitUp > (M1State.HallNow+700)))||((M1Cmd==CmdToPreseting)&&(M1Dir==UP)&&((M1State.Record[Position] - M1State.HallNow) > 1500)))
           &&(((M2Cmd==CmdUp)&&(M2State.LimitUp > (M2State.HallNow+700)))||((M2Cmd==CmdToPreseting)&&(M2Dir==UP)&&((M2State.Record[Position] - M2State.HallNow) > 1500))))
         {          
-          M1PID.SetSpeed = (M1PID.CurrSpeed+M2PID.CurrSpeed)/2 + 1;
+          M1PID.SetSpeed = (M1PID.CurrSpeed+M2PID.CurrSpeed)/2+1;
           M2PID.SetSpeed = M1PID.SetSpeed;
         }
         T500msCnt = 0;
@@ -1906,27 +2132,18 @@ void AntiLsm6dsl(void)
                     M1Flag=1; //what
                 }
                 
-               // if(((Acc_z>150)||(Acc_z<-150))&&(motorStartTimer>1000))
+                //if(((Acc_z>150)||(Acc_z<-150))&&(motorStartTimer>1000))
                 //{
-                  //  M1Flag=1;
+                    //M1Flag=1;
                 //}
                 
-                if(((Sensitivity == 3))&&(LSM6DSLFlag == 1))
+                
+                if(((Acc_x>4000)||(Acc_y>4000)||(Acc_x<-4000)||(Acc_y<-4000))&&(motorStartTimer>1000))
                 {
-                if(((Acc_z>1000)||(Acc_z<-1000))&&(motorStartTimer>1000))
-                {
-                 M1Flag=1;
-                }
+                    M1Flag=1;
                 }
                 
-                else if(((Sensitivity == 2))&&(LSM6DSLFlag == 1))
-                {
-                if(((Acc_z>2000)||(Acc_z<-2000))&&(motorStartTimer>1000))
-                {
-                 M1Flag=1;
-                }
                 
-                }
                 /*
                 if ((((Acc_z>7000)||(Acc_z<-7000))&&(motorStartTimer>1000)) && (Tap_Parameter.TapControlFlag == 0))
                 {
@@ -1945,26 +2162,13 @@ void AntiLsm6dsl(void)
                
                 //if(((Acc_z>150)||(Acc_z<-150))&&(motorStartTimer>1000))
                 //{
-                  //  M1Flag=1;
+                    //M1Flag=1;
                 //}
                 
                 
-                
-                if(((Sensitivity == 3))&&(LSM6DSLFlag == 1))
+                 if(((Acc_x>4000)||(Acc_y>4000)||(Acc_x<-4000)||(Acc_y<-4000))&&(motorStartTimer>1000))
                 {
-                if(((Acc_z>1000)||(Acc_z<-1000))&&(motorStartTimer>1000))
-                {
-                 M1Flag=1;
-                }
-                }
-                
-                else if(((Sensitivity == 2))&&(LSM6DSLFlag == 1))
-                {
-                if(((Acc_z>2000)||(Acc_z<-2000))&&(motorStartTimer>1000))
-                {
-                 M1Flag=1;
-                }
-                
+                    M1Flag=1;
                 }
                 
                 /*
@@ -1981,10 +2185,11 @@ void AntiLsm6dsl(void)
        {
            if(BlockFlag==1)
            {
-             //Adjust_State==0
-             Adjust_State=0;
-             Balance_Data_Refresh();
-             DisplayMode = HeightMode;    
+           //Adjust_State==0
+           Adjust_State=0;
+           Balance_Data_Refresh();
+           DisplayMode=HeightMode;    
+           
            }
         if((SysCmd==CmdUp)||((M1Dir==UP)&&(M2Dir==UP))) //向上运动
         {

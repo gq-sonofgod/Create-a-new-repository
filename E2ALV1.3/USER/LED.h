@@ -43,7 +43,7 @@
 #define  RemindMode  0x32       //ÌáĞÑÄ£Ê½
 #define  ErrorMode   0x33
 #define  TestMode    0x34
-#define  Test_Sens   0x37
+
 #define  MenuMode    0x35
 #define  FLash_HeightMode 0x36
 

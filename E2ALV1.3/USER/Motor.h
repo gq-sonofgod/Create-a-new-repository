@@ -22,7 +22,7 @@ typedef struct
 }MSTATE;
 
 
-#define MINSPEED   25//35  
+#define MINSPEED   35  
 #define MAXSPEED   45
 
 #define DELT_HALL  45
